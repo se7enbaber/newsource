@@ -1,0 +1,201 @@
+# Docker Compose file for multi-service ERP application
+# PostgreSQL: Database=Host, Password=123456 (Fixed)
+# All configuration via .env file
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  minio-data:
+    driver: local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - "${POSTGRES_HOST_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    read_only: false
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: AdministrationService/Dockerfile
+    container_name: erp-admin-api
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_HOST_PORT}:${ADMIN_SERVICE_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:${ADMIN_SERVICE_PORT}
+      - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION}
+      - SignalRService__BaseUrl=${SIGNALR_BASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.75'
+          memory: 512M
+    user: "1000:1000"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: GatewayService/Dockerfile
+    container_name: erp-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_HOST_PORT}:${GATEWAY_SERVICE_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:${GATEWAY_SERVICE_PORT}
+      - ASPNETCORE_HTTP_PORTS=${GATEWAY_SERVICE_PORT}
+      - ReverseProxy__Clusters__admin-cluster__Destinations__admin-service__Address=http://admin-service:${ADMIN_SERVICE_PORT}
+      - ReverseProxy__Clusters__signalr-cluster__Destinations__signalr-service__Address=http://signalr:${SIGNALR_SERVICE_PORT}
+      - JwtSettings__Authority=http://admin-service:${ADMIN_SERVICE_PORT}
+    depends_on:
+      admin-service:
+        condition: service_started
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 384M
+    user: "1000:1000"
+
+  signalr:
+    build:
+      context: .
+      dockerfile: SignalRService/Dockerfile
+    container_name: erp-signalr
+    restart: unless-stopped
+    ports:
+      - "${SIGNALR_HOST_PORT}:${SIGNALR_SERVICE_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:${SIGNALR_SERVICE_PORT}
+    depends_on:
+      admin-service:
+        condition: service_started
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 384M
+    user: "1000:1000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: my-nextjs/Dockerfile
+    container_name: erp-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_HOST_PORT}:${FRONTEND_SERVICE_PORT}"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - NEXT_PUBLIC_API_ADMIN_URL=${NEXT_PUBLIC_API_ADMIN_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - NEXT_PUBLIC_SIGNALR_URL=${NEXT_PUBLIC_SIGNALR_URL}
+    depends_on:
+      - gateway
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    user: "1001:1001"
+
+  # ── MinIO File Storage ────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: app-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
+    ports:
+      - "${PORT_MINIO_API}:9000"      # S3 API
+      - "${PORT_MINIO_CONSOLE}:9001"  # Web Console
+    volumes:
+      - minio-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ── File Service ──────────────────────────────────────────
+  file-service:
+    build:
+      context: .
+      dockerfile: FileService/Dockerfile
+    container_name: app-file-service
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - Seq__ServerUrl=${SEQ_URL}
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=${MINIO_USER}
+      - MinIO__SecretKey=${MINIO_PASSWORD}
+      - MinIO__UseSSL=false
+      - AllowedOrigins=${ALLOWED_ORIGINS}
+    ports:
+      - "${PORT_FILE_SERVICE}:8080"
+    networks:
+      - app-network
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped

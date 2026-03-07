@@ -1,0 +1,14 @@
+{
+  "/(dashboard)/job-logs/page": "app/(dashboard)/job-logs/page.js",
+  "/(pages)/(administrator)/roles/page": "app/(pages)/(administrator)/roles/page.js",
+  "/(pages)/(administrator)/tenants/page": "app/(pages)/(administrator)/tenants/page.js",
+  "/(pages)/(administrator)/users/page": "app/(pages)/(administrator)/users/page.js",
+  "/(pages)/products/page": "app/(pages)/products/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/health/route": "app/api/health/route.js",
+  "/api/proxy/[...path]/route": "app/api/proxy/[...path]/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js"
+}

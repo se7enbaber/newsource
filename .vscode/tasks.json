@@ -1,0 +1,141 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🟢 AdministrationService",
+            "type": "shell",
+            "command": "dotnet watch",
+            "options": {
+                "cwd": "${workspaceFolder}/AdministrationService",
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command"
+                    ]
+                },
+                "env": {
+                    "DOTNET_CLI_UI_LANGUAGE": "en",
+                    "TERM": "xterm-256color"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "🔵 GatewayService",
+            "type": "shell",
+            "command": "dotnet watch",
+            "options": {
+                "cwd": "${workspaceFolder}/GatewayService/Gateway",
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command"
+                    ]
+                },
+                "env": {
+                    "DOTNET_CLI_UI_LANGUAGE": "en",
+                    "TERM": "xterm-256color"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "🟣 SignalRService",
+            "type": "shell",
+            "command": "dotnet watch",
+            "options": {
+                "cwd": "${workspaceFolder}/SignalRService",
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command"
+                    ]
+                },
+                "env": {
+                    "DOTNET_CLI_UI_LANGUAGE": "en",
+                    "TERM": "xterm-256color"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "🟡 Frontend (Next.js)",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/my-nextjs",
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": [
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command"
+                    ]
+                },
+                "env": {
+                    "FORCE_COLOR": "1",
+                    "TERM": "xterm-256color"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "services",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 Start All Services",
+            "dependsOn": [
+                "🟢 AdministrationService",
+                "🔵 GatewayService",
+                "🟣 SignalRService",
+                "🟡 Frontend (Next.js)"
+            ],
+            "dependsOrder": "parallel",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

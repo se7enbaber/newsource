@@ -1,0 +1,3 @@
+C:\Program Files\dotnet\sdk\10.0.103\NuGet.targets(519,5): error MSB3202: The project file "d:\App\Project\GatewayService\IdentityService\IdentityService.csproj" was not found. [d:\App\Project\GatewayService\GatewayService.slnx]
+C:\Program Files\dotnet\sdk\10.0.103\NuGet.targets(519,5): error MSB3202: The project file "d:\App\Project\GatewayService\OrderService\OrderService.csproj" was not found. [d:\App\Project\GatewayService\GatewayService.slnx]
+C:\Program Files\dotnet\sdk\10.0.103\NuGet.targets(519,5): error MSB3202: The project file "d:\App\Project\GatewayService\Shared\Shared.csproj" was not found. [d:\App\Project\GatewayService\GatewayService.slnx]

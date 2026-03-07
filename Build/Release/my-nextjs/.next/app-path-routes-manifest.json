@@ -1,0 +1,14 @@
+{
+  "/(dashboard)/job-logs/page": "/job-logs",
+  "/(pages)/(administrator)/roles/page": "/roles",
+  "/(pages)/(administrator)/tenants/page": "/tenants",
+  "/(pages)/(administrator)/users/page": "/users",
+  "/(pages)/products/page": "/products",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/health/route": "/api/health",
+  "/api/proxy/[...path]/route": "/api/proxy/[...path]",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login",
+  "/page": "/"
+}

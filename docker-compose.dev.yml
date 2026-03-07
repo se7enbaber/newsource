@@ -1,0 +1,45 @@
+# Docker Compose override for development with hot reload
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: my-nextjs/Dockerfile
+      target: builder  # Use builder stage for development
+    volumes:
+      - ./my-nextjs:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+    develop:
+      watch:
+        - action: sync
+          path: ./my-nextjs
+          target: /app
+          ignore:
+            - node_modules
+            - .next
+            - dist
+        - action: rebuild
+          path: ./my-nextjs/package.json
+    command: npm run dev
+
+  admin-service:
+    volumes:
+      - ./AdministrationService:/app/src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  gateway:
+    volumes:
+      - ./GatewayService:/app/src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  signalr:
+    volumes:
+      - ./SignalRService:/app/src
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development

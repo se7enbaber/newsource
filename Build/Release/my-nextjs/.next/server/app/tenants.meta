@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(pages)/layout,_N_T_/(pages)/(administrator)/layout,_N_T_/(pages)/(administrator)/tenants/layout,_N_T_/(pages)/(administrator)/tenants/page,_N_T_/tenants"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KHBhZ2VzKQ/!KGFkbWluaXN0cmF0b3Ip/tenants/__PAGE__",
+    "/!KHBhZ2VzKQ/!KGFkbWluaXN0cmF0b3Ip/tenants",
+    "/!KHBhZ2VzKQ/!KGFkbWluaXN0cmF0b3Ip",
+    "/!KHBhZ2VzKQ",
+    "/_index",
+    "/_head"
+  ]
+}

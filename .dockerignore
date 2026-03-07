@@ -1,0 +1,26 @@
+# Ignored by any Docker build in this root context
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/.next
+**/out
+**/build
+**/logs
+docker-compose*
+Dockerfile*
+*.log
+*.txt
+*.bat
+*.cmd
+.git
+.gitignore
+.env
+.env.local
+.env.production
+.antigravityignore
+PROMPT_GEMINI_DOCKER.md
+ROADMAP.md
+Build/Release
+Build/Docker/**/*.dockerignore

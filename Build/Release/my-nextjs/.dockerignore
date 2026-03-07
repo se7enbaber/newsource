@@ -1,0 +1,17 @@
+**/.git
+**/.gitignore
+**/.dockerignore
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+.DS_Store
+.vscode
+.idea
+.next/cache
+.next/static
+node_modules/.cache
+dist
+build
+coverage
+.env.local
+.env.*.local

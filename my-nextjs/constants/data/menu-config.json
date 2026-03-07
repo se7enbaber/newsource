@@ -1,0 +1,117 @@
+[
+    {
+        "title": "Trang chủ",
+        "titleKey": "menu_dashboard",
+        "path": "/",
+        "order": 1,
+        "module": "AdministrationService.Dashboard",
+        "icon": "HomeOutlined",
+        "requiredPermissions": [
+            "AdministrationService.Dashboard.View"
+        ]
+    },
+    {
+        "title": "Quản trị hệ thống",
+        "titleKey": "menu_administrator",
+        "path": "#",
+        "order": 2,
+        "module": "AdministrationService.System",
+        "icon": "SettingOutlined",
+        "requiredFeature": "Feature.Administration",
+        "children": [
+            {
+                "title": "Quản lý người dùng",
+                "titleKey": "menu_users",
+                "path": "/users",
+                "order": 1,
+                "module": "AdministrationService.Users",
+                "icon": "UserOutlined",
+                "requiredFeature": "Feature.Administration.Users",
+                "requiredPermissions": [
+                    "AdministrationService.Users.View"
+                ]
+            },
+            {
+                "title": "Quản lý Roles",
+                "titleKey": "menu_roles",
+                "path": "/roles",
+                "order": 2,
+                "module": "AdministrationService.Roles",
+                "icon": "UsergroupAddOutlined",
+                "requiredFeature": "Feature.Administration.Roles",
+                "requiredPermissions": [
+                    "AdministrationService.Roles.View"
+                ]
+            },
+            {
+                "title": "Quản lý Tenants",
+                "titleKey": "menu_tenants",
+                "path": "/tenants",
+                "order": 3,
+                "module": "AdministrationService.Tenants",
+                "icon": "ShopOutlined",
+                "requiredAdminTenant": true,
+                "requiredPermissions": [
+                    "AdministrationService.Tenants.View"
+                ]
+            },
+            {
+                "title": "Lịch sử Jobs",
+                "titleKey": "menu_job_logs",
+                "path": "/job-logs",
+                "order": 4,
+                "module": "AdministrationService.Jobs",
+                "icon": "HistoryOutlined",
+                "requiredPermissions": [
+                    "*"
+                ]
+            }
+        ]
+    },
+    {
+        "title": "Quản lý dữ liệu chủ",
+        "titleKey": "menu_mdm",
+        "path": "#",
+        "order": 3,
+        "module": "AdministrationService.MDM",
+        "icon": "DatabaseOutlined",
+        "requiredFeature": "Feature.MDM",
+        "children": [
+            {
+                "title": "Sản phẩm",
+                "titleKey": "menu_products",
+                "path": "/products",
+                "order": 1,
+                "module": "AdministrationService.Products",
+                "icon": "TagsOutlined",
+                "requiredFeature": "Feature.MDM.Products",
+                "requiredPermissions": [
+                    "AdministrationService.Products.View"
+                ]
+            },
+            {
+                "title": "Bảng giá",
+                "titleKey": "menu_pricing",
+                "path": "#",
+                "order": 2,
+                "module": "AdministrationService.Pricing",
+                "icon": "TagsOutlined",
+                "requiredFeature": "Feature.Pricing",
+                "children": [
+                    {
+                        "title": "Danh sách bảng giá",
+                        "titleKey": "menu_pricing_list",
+                        "path": "/pricing-list",
+                        "order": 1,
+                        "module": "AdministrationService.Pricing",
+                        "icon": "TagsOutlined",
+                        "requiredFeature": "Feature.Pricing.PricingList",
+                        "requiredPermissions": [
+                            "AdministrationService.Pricing.View"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
