@@ -1,118 +1,139 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Button, Tooltip, ButtonProps } from 'antd';
+import { Button, Tooltip, ButtonProps, Popconfirm, Spin, theme } from 'antd';
 import {
-    PlusOutlined,
-    FileExcelOutlined,
-    SearchOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    EyeOutlined,
+    LoadingOutlined,
     QuestionCircleOutlined
 } from '@ant-design/icons';
 import { debounce } from 'lodash';
-import { useTheme } from '@/lib/ThemeProvider';
 import { usePermission } from '@/lib/PermissionProvider';
+import { useContrastColor } from '@/hooks/useContrastColor';
 
-interface AppButtonProps<T = any> extends Omit<ButtonProps, 'onClick'> {
+const { useToken } = theme;
+
+/**
+ * Mở rộng thuộc tính của Antd Button
+ */
+export interface AppButtonProps<T = any> extends Omit<ButtonProps, 'onClick' | 'variant'> {
+    /**
+     * Tiêu đề Tooltip khi hover (nếu có)
+     */
     title?: string;
-    btnType?: 'add' | 'export' | 'filter' | 'edit' | 'delete' | 'view' | 'help' | 'vibe' | 'quest';
-    data?: T;
+    /**
+     * Biến thể thiết kế (đồng nhất toàn hệ thống)
+     */
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'link';
+    /**
+     * Quyền cần thiết để hiển thị nút (ví dụ: "AdministrationService.Users.Create")
+     */
     permission?: string | string[];
+    /**
+     * Dữ liệu kèm theo khi click (truyền ngược lại cho callback)
+     */
+    data?: T;
+    /**
+     * Bật cơ chế chống spam click (mặc định 300ms)
+     */
     useDebounce?: boolean;
+    /**
+     * Nội dung xác nhận trước khi thực hiện hành động
+     */
+    confirm?: string | React.ReactNode;
+    /**
+     * Callback khi nút được nhấn
+     */
     onClick?: (e: React.MouseEvent<HTMLElement>, data?: T) => void;
+    /**
+     * Nút được định nghĩa cho component AppGrid (như add, edit, delete, ...)
+     */
+    btnType?: 'add' | 'export' | 'filter' | 'edit' | 'delete' | 'view' | 'help' | 'vibe' | 'quest';
 }
 
+/**
+ * AppButton - Thành phần nút bấm trung tâm của Mint ERP
+ * Tự động ẩn nếu không có quyền, hỗ trợ confirm nhanh và đảm bảo UX (loading/debounce)
+ */
 export const AppButton = <T,>({
     title,
     icon,
     style,
+    variant,
     btnType,
     className,
     children,
     onClick,
     data,
     permission,
+    loading,
+    confirm,
     useDebounce = false,
     ...props
 }: AppButtonProps<T>) => {
-    const { primaryColor } = useTheme();
+    const { token } = useToken();
+    const { getTextColor, primaryTextColor } = useContrastColor();
     const { hasPermission } = usePermission();
 
+    // 1. Kiểm tra Permission - Nếu không có quyền, return null ngay lập tức
     const canAccess = !permission || hasPermission(permission);
-
     if (!canAccess) return null;
 
+    // 2. Định nghĩa cấu hình style dựa trên variant/btnType
     const getConfigs = () => {
-        const themeBackground = { backgroundColor: primaryColor, color: 'white', ...style };
-        const roundedClass = 'rounded-md flex items-center justify-center';
+        const baseClass = 'rounded-lg flex items-center justify-center font-semibold transition-all duration-200';
+        
+        let targetVariant = variant;
+        // Mặc định mapping btnType (tương thích ngược)
+        if (btnType === 'add') targetVariant = 'primary';
+        if (btnType === 'delete') targetVariant = 'danger';
+        if (btnType === 'edit') targetVariant = 'ghost';
 
-        switch (btnType) {
-            case 'add':
+        switch (targetVariant) {
+            case 'primary':
                 return {
                     type: 'primary' as const,
-                    style: themeBackground,
-                    className: `${roundedClass}`,
-                    icon: icon || <PlusOutlined />
+                    style: { backgroundColor: token.colorPrimary, color: primaryTextColor, ...style },
+                    className: `${baseClass} shadow-md`,
                 };
-            case 'export':
+            case 'secondary':
                 return {
-                    style: themeBackground,
-                    className: `${roundedClass}`,
-                    icon: icon || <FileExcelOutlined />
+                    className: `${baseClass} border-0`,
+                    style: { backgroundColor: token.colorFillAlter, color: token.colorText, ...style }
                 };
-            case 'help':
-                return {
-                    type: 'default' as const,
-                    className: `${roundedClass} bg-gray-50 text-gray-600 border-gray-300`,
-                    icon: icon || <QuestionCircleOutlined />
-                };
-            case 'delete':
+            case 'danger':
                 return {
                     danger: true,
-                    type: 'text' as const,
-                    className: `${roundedClass} hover:bg-red-50`,
-                    icon: icon || <DeleteOutlined />
+                    type: 'primary' as const,
+                    style: { color: getTextColor(token.colorError), ...style },
+                    className: `${baseClass} shadow-md`,
                 };
-            case 'edit':
-                return {
-                    type: 'text' as const,
-                    className: `${roundedClass} hover:bg-orange-50`,
-                    icon: icon || <EditOutlined />
-                };
-            case 'view':
+            case 'ghost':
                 return {
                     type: 'default' as const,
-                    className: `${roundedClass} border-primary`,
-                    style: {
-                        borderColor: props.disabled ? undefined : primaryColor,
-                        color: props.disabled ? undefined : primaryColor,
-                        ...style
-                    },
-                    icon: icon || <EyeOutlined />
+                    className: `${baseClass}`,
+                    style: { 
+                        borderColor: token.colorBorder, 
+                        color: token.colorTextSecondary,
+                        ...style 
+                    }
                 };
-            case 'vibe':
+            case 'link':
                 return {
-                    className: `${roundedClass} btn-primary-vibe`,
-                    icon: icon || children === 'Add' ? <PlusOutlined /> : icon,
-                };
-            case 'quest':
-                return {
-                    className: `${roundedClass} btn-side-quest`,
-                    icon: icon || <QuestionCircleOutlined />
+                    type: 'link' as const,
+                    className: `${baseClass}`,
+                    style: { color: token.colorPrimary, ...style }
                 };
             default:
                 return {
-                    className: `${roundedClass} border-gray-300`,
-                    style: themeBackground,
-                    icon: icon
+                    style: { ...style },
+                    className: `${baseClass}`,
                 };
         }
     };
 
     const config = getConfigs();
 
+    // 3. Xử lý debounce click
     const debouncedClick = useCallback(
         debounce((e: React.MouseEvent<HTMLElement>, d?: T) => {
             onClick?.(e, d);
@@ -121,6 +142,7 @@ export const AppButton = <T,>({
     );
 
     const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (loading) return;
         e.stopPropagation();
 
         if (useDebounce) {
@@ -130,22 +152,63 @@ export const AppButton = <T,>({
         }
     };
 
+    // 4. Render nội dung (nếu đang loading thì hiện Spin)
+    const renderContent = () => (
+        <div className="flex items-center gap-2">
+            {loading && (
+                <Spin 
+                    indicator={
+                        <LoadingOutlined 
+                            style={{ 
+                                fontSize: 16, 
+                                color: (variant === 'primary' || variant === 'danger' || btnType === 'add' || btnType === 'delete') 
+                                    ? getTextColor(variant === 'danger' || btnType === 'delete' ? token.colorError : token.colorPrimary) 
+                                    : token.colorPrimary 
+                            }} 
+                            spin 
+                        />
+                    } 
+                />
+            )}
+            {icon && !loading && icon}
+            {children}
+        </div>
+    );
+
+    // 5. Wrap các lớp tương tác (Popconfirm -> Tooltip -> Button)
     const buttonElement = (
         <Button
-            {...config}
             {...props}
-            onClick={handleClick}
-            className={`${config.className} ${btnType ? `tour-${btnType}` : ''} ${className || ''}`}
+            {...config}
+            loading={false} // Force false to use custom spin
+            disabled={!!loading || props.disabled}
+            onClick={confirm ? undefined : handleClick} // Nếu có confirm, onClick sẽ được handle bởi Popconfirm
+            className={`${config.className} ${className || ''}`}
         >
-            {children}
+            {renderContent()}
         </Button>
     );
 
+    const withConfirm = confirm ? (
+        <Popconfirm
+            title={confirm}
+            onConfirm={(e) => handleClick(e as any)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ style: { backgroundColor: token.colorPrimary, color: primaryTextColor } }}
+            icon={<QuestionCircleOutlined style={{ color: token.colorWarning }} />}
+        >
+            {buttonElement}
+        </Popconfirm>
+    ) : buttonElement;
+
     return title ? (
         <Tooltip title={title} mouseEnterDelay={0.5}>
-            {buttonElement}
+            {withConfirm}
         </Tooltip>
     ) : (
-        buttonElement
+        withConfirm
     );
 };
+
+export default AppButton;

@@ -134,7 +134,7 @@ export default function UserListPage() {
     // ── Table columns ─────────────────────────────────────────────────────────
     const columns: ColumnsType<UserDataType> = [
         {
-            title: <span className="text-white font-semibold">{t('actions')}</span>,
+            title: t('actions'),
             key: 'action',
             width: 140,
             align: 'center',

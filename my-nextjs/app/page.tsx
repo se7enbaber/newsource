@@ -121,7 +121,13 @@ export default function Home() {
             key: 'progress',
             render: (p: number) => (
                 <div className="w-32">
-                    <Progress percent={p} strokeColor="#2BD4BD" size="small" showInfo={false} strokeWidth={6} railColor="#f1f5f9" />
+                    <Progress 
+                        percent={p} 
+                        strokeColor="#2BD4BD" 
+                        size={{ height: 6 }} 
+                        showInfo={false} 
+                        railColor="#f1f5f9" 
+                    />
                 </div>
             )
         },
@@ -167,7 +173,7 @@ export default function Home() {
                                 
                                 {stat.hasProgress ? (
                                     <div className="mt-8">
-                                        <Progress percent={85} strokeColor="#2BD4BD" showInfo={false} size={8} railColor="#f1f5f9" />
+                                        <Progress percent={85} strokeColor="#2BD4BD" showInfo={false} size={{ height: 8 }} railColor="#f1f5f9" />
                                         <div className="flex justify-between mt-3">
                                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Optimal Range</span>
                                             <span className="text-[9px] font-black text-[#2bd4bd] uppercase tracking-widest">Good</span>
@@ -220,8 +226,8 @@ export default function Home() {
                         <Timeline
                             items={[
                                 {
-                                    dot: <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><CheckCircleFilled /></div>,
-                                    children: (
+                                    icon: <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><CheckCircleFilled /></div>,
+                                    content: (
                                         <div className="pl-2">
                                             <div className="font-black text-[#1e293b] text-[14px]">Task completed</div>
                                             <div className="text-slate-400 text-[12px] font-bold mt-1">Sarah finalized the login flow for Mint App</div>
@@ -230,8 +236,8 @@ export default function Home() {
                                     ),
                                 },
                                 {
-                                    dot: <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"><WarningFilled /></div>,
-                                    children: (
+                                    icon: <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"><WarningFilled /></div>,
+                                    content: (
                                         <div className="pl-2">
                                             <div className="font-black text-[#1e293b] text-[14px]">Deadline alert</div>
                                             <div className="text-slate-400 text-[12px] font-bold mt-1">Vibe Analytics UI review is due in 3 hours</div>
@@ -240,8 +246,8 @@ export default function Home() {
                                     ),
                                 },
                                 {
-                                    dot: <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><UserAddOutlined /></div>,
-                                    children: (
+                                    icon: <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><UserAddOutlined /></div>,
+                                    content: (
                                         <div className="pl-2">
                                             <div className="font-black text-[#1e293b] text-[14px]">New member</div>
                                             <div className="text-slate-400 text-[12px] font-bold mt-1">Jordan joined the Design Team</div>

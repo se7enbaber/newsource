@@ -182,7 +182,7 @@ export default function TenantsPage() {
     // ─── Table Columns ──────────────────────────────────────────────────────────
     const columns: ColumnsType<TenantDto> = [
         {
-            title: <span className="text-white font-semibold">{t('actions')}</span>,
+            title: t('actions'),
             key: 'action',
             width: 140,
             align: 'center',
@@ -236,7 +236,7 @@ export default function TenantsPage() {
             )
         },
         {
-            title: <span className="text-white font-semibold">{t('db_provider')}</span>,
+            title: t('db_provider'),
             dataIndex: 'dbProvider',
             key: 'dbProvider',
             width: 130,
@@ -248,7 +248,7 @@ export default function TenantsPage() {
             )
         },
         {
-            title: <span className="text-white font-semibold">{t('features')}</span>,
+            title: t('features'),
             dataIndex: 'features',
             key: 'features',
             width: 280,
@@ -268,7 +268,7 @@ export default function TenantsPage() {
             )
         },
         {
-            title: <span className="text-white font-semibold">{t('db_config')}</span>,
+            title: t('db_config'),
             key: 'dbConfig',
             width: 150,
             align: 'center',
@@ -284,7 +284,7 @@ export default function TenantsPage() {
             )
         },
         {
-            title: <span className="text-white font-semibold">Ngày chạy Update DB</span>,
+            title: 'Ngày chạy Update DB',
             dataIndex: 'lastMigratedAt',
             key: 'lastMigratedAt',
             width: 170,
@@ -292,7 +292,7 @@ export default function TenantsPage() {
             render: (date: string) => <span className={date ? "text-[#00b5ad] font-medium" : "text-gray-400 italic"}>{date ? dayjs(date).format('DD/MM/YYYY HH:mm') : '—'}</span>
         },
         {
-            title: <span className="text-white font-semibold">{t('created_at')}</span>,
+            title: t('created_at'),
             dataIndex: 'createdAt',
             key: 'createdAt',
             width: 150,

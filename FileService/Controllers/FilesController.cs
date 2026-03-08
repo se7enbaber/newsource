@@ -4,7 +4,7 @@ using ShareService.Storage;
 namespace FileService.Controllers;
 
 [ApiController]
-[Route("api/files")]
+[Route("files")]
 public class FilesController : ControllerBase
 {
     private readonly IFileStorageService _storage;

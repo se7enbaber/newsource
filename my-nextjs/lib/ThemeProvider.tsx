@@ -87,10 +87,14 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             borderRadius: 16,
             fontFamily: '"Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             fontSize: fontSize,
-            colorSuccess: '#2bd4bd', 
-            colorWarning: '#ff9800', 
-            colorInfo: '#2BD4BD', 
+            colorSuccess: primaryColor, 
+            colorWarning: '#faad14', 
+            colorInfo: primaryColor, 
             colorBgLayout: '#f8fafc', // Very light gray background
+            colorText: '#1e293b', // Slate 800 - Premium dark text
+            colorTextSecondary: '#475569', // Slate 600 - Secondary text
+            colorTextTertiary: '#94a3b8', // Slate 400 - Tertiary/Description text
+            colorTextQuaternary: '#cbd5e1', // Slate 300 - Placeholder text
         };
 
         let components: any = {
@@ -110,8 +114,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 colorBgContainer: '#ffffff',
             },
             Table: {
-                headerBg: 'transparent',
-                headerColor: '#64748b',
                 headerBorderRadius: 16,
                 cellPaddingBlock: 16,
             },

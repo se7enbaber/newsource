@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     background: '#f8fafc'
                 }}>
                     {!isLoginPage && <AppHeader />}
-                    <main style={{ padding: isLoginPage ? 0 : '0 24px 40px', minHeight: 'calc(100vh - 120px)' }}>
+                    <main style={{ padding: isLoginPage ? 0 : '0 16px 32px', minHeight: 'calc(100vh - 120px)' }}>
                         {children}
                         <AppFloatButton />
                     </main>

@@ -168,7 +168,7 @@ export default function ProductListPage() {
             render: (text) => <span className="text-gray-400 italic">{text}</span>
         },
         {
-            title: <span className="text-white font-semibold">{t('product_attributes')}</span>,
+            title: t('product_attributes'),
             dataIndex: 'attributes',
             key: 'attributes',
             align: 'center',

@@ -12,15 +12,54 @@ This is the Frontend part of the Enterprise ERP Admin Panel, built with **Next.j
 2.  **Xuất báo cáo Excel**:
     *   Hỗ trợ nút **Xuất Excel** nhanh trên tất cả các màn hình quản trị chính.
 
-3.  **Hệ thống UI Component dùng chung**:
-    *   `AppGrid`, `AppButton`, `AppPopup`, `AppTour` được thiết kế đồng bộ, dễ tái sử dụng.
-    *   `AppPopup` mặc định luôn được căn giữa màn hình (`centered`), mang lại UX đồng nhất cho mọi Form nhập liệu.
-    *   `AppGrid` được thiết kế mới thanh Toolbar tìm kiếm & lọc với các icon tối giản, nổi bật theo theme.
-    *   `AppButton` tự động gán class tour (vd: `tour-edit`) để hệ thống hướng dẫn dễ dàng tìm thấy phần tử.
+3.  **Hệ thống UI Component "Siêu năng lực"**:
+    -   [`AppButton`](./app/components/common/AppButton.tsx): Tích hợp sâu với `PermissionProvider` (tự ẩn theo quyền), hỗ trợ loading spinner đồng bộ và cơ chế xác nhận (`Popconfirm`) trực tiếp qua prop.
+    -   [`AppGrid`](./app/components/common/AppGrid.tsx): Thế hệ mới tích hợp **Summary Cards** (thẻ thống kê), thanh công cụ **Toolbar**, và cơ chế **Row Actions** thông minh (chỉ hiện khi hover).
+    -   [`AppBadge`](./app/components/common/AppBadge.tsx) & [`AppStatCard`](./app/components/common/AppStatCard.tsx): Hiển thị trạng thái và thông số thống kê đồng bộ, chuyên nghiệp.
+    -   Chi tiết xem tại: [**Components Documentation**](./app/components/README.md).
 
-4.  **Thiết kế Mint ERP (Vibe Check Theme)**:
-    *   Hệ thống chuyển đổi sang phong cách "Mint ERP" cực kỳ hiện đại với bảng màu chủ đạo `#2BD4BD`, font **Space Grotesk** và bo góc pill-style (24px-32px).
-    *   Tích hợp Sidebar tinh xảo (Pill-style, Upgrade card), Header độc lập và Dashboard 2 cột chuẩn mực như hình thiết kế.
+4.  **Thiết kế Mint ERP Premium**:
+    -   **Trang đăng nhập Split Layout**: Giao diện login 50/50 hiện đại với vùng branding ấn tượng.
+    -   Hệ thống theme đồng bộ với font **Space Grotesk** và bo góc pill-style chuyên nghiệp.
+
+5.  **Sidebar V3 (Premium Glassmorphism)**:
+    -   **Thiết kế Depth & Glassmorphism**: Sử dụng gradient dọc kết hợp backdrop-blur và màu nền tính toán động (adjust lightness -15%) từ Primary Color.
+    -   **Phân cấp Visual (Hierarchy)**: Menu cha (Semi-bold, 14px, White/0.75), menu con (Medium, 13px, White/0.6).
+    -   **Active State sang trọng**: Nền White/0.22, border-left trắng 3px, đổ bóng inner shadow nhẹ.
+    -   **Avatar Dropdown Footer**: Vùng hồ sơ người dùng được tách biệt tại chân Sidebar với hiệu ứng Glassmorphism và dropdown menu nhanh.
+    -   **Scrollbar tinh tế**: Custom scrollbar siêu mỏng, tự ẩn hiện mượt mà.
+
+---
+
+## 🏗 Vị trí trong Kiến trúc Tổng thể
+
+```text
+┌────────────────────────┐         ┌────────────────────────┐
+│ Trình duyệt (Người dùng)│  HTTP   │ Next.js Server (Proxy) │
+└───────────┬────────────┘         └───────────┬────────────┘
+            │                                  │
+            ▼                                  ▼
+┌───────────────────────────────────────────────────────────┐
+│                   Gateway Service (YARP)                  │
+└──────┬──────────────────────────┬──────────────┬──────────┘
+       │ /notificationHub         │ /api/**       │ /files/**
+       ▼                          ▼               ▼
+┌─────────────┐  HTTP   ┌──────────────────┐  ┌──────────────────┐
+│SignalR Svc  │◄────────│Administration Svc│  │  File Service    │
+│(WebSocket)  │  POST   │  (Core API)      │  │  (Upload/Download)│
+└─────────────┘         └────────┬─────────┘  └────────┬─────────┘
+                                 │ EF Core              │ S3 API
+                                 ▼                      ▼
+                         ┌──────────────┐      ┌──────────────────┐
+                         │   Database   │      │      Minio       │
+                         │ (PostgreSQL) │      │ (File Storage)   │
+                         └──────────────┘      └──────────────────┘
+```
+
+6.  **Auto Contrast Color (WCAG 2.1)**:
+    -   Tự động tối ưu màu chữ theo nền Dashboard/Table Header.
+    -   Đảm bảo Accessibility chuẩn quốc tế khi thay đổi Theme Color động.
+
 
 ---
 

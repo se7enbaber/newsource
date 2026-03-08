@@ -5,7 +5,7 @@
 A modern, enterprise-grade ERP Admin Panel built with **Next.js 16**, **Ant Design 6**, and **TypeScript**.  
 Designed for developers coming from a **C# / .NET background** transitioning to modern web development.
 
-> **Ngày cập nhật:** 2026-03-07 (Cập nhật Gen Z Vibe Theme)
+> **Ngày cập nhật:** 2026-03-08 (Cập nhật Mint ERP Premium & Auto Contrast)
 
 ---
 
@@ -15,7 +15,7 @@ Designed for developers coming from a **C# / .NET background** transitioning to 
 |---|---|
 | **Framework** | [Next.js 16.1+](https://nextjs.org/) (App Router, Turbopack) |
 | **UI Library** | [Ant Design 6](https://ant.design/) |
-| **Styling** | Vanilla CSS + Ant Design Tokens (**Gen Z Vibe Theme**: #7f13ec, #2bd4bd) |
+| **Styling** | Vanilla CSS + Ant Design Tokens (**Dynamic theme**: Teal #4ECDC4) |
 | **State** | React Hooks + Context API |
 | **Language** | TypeScript (Strict) |
 | **i18n** | `react-i18next` (vi/en) |
@@ -84,12 +84,16 @@ my-nextjs/
 │   │   └── health/               # Health check endpoint
 │   ├── components/
 │   │   ├── common/
-│   │   │   ├── AppButton.tsx
+│   │   │   ├── AppBadge.tsx      # Nhãn trạng thái (Status Tag)
+│   │   │   ├── AppButton.tsx     # Nút bấm tích hợp Permission & Confirm
 │   │   │   ├── AppFloatButton.tsx
-│   │   │   ├── AppGrid.tsx
+│   │   │   ├── AppGrid.tsx       # Bảng dữ liệu thông minh (Data Grid) tích hợp Row Actions
 │   │   │   ├── AppGridSearch.tsx
 │   │   │   ├── AppLayout.tsx
 │   │   │   ├── AppPopup.tsx       # Base modal — isDirty guard + submitting lock
+│   │   │   ├── AppStatCard.tsx    # Thành phần thẻ thống kê lẻ
+│   │   │   ├── AppStatCards.tsx   # Nhóm thẻ thống kê (Group)
+│   │   │   ├── AppTagList.tsx     # Quản lý danh sách Tag thu gọn (+N more)
 │   │   │   └── AppTour.tsx        # Guided Tours (Ant Design Tour wrapper)
 │   │   ├── AuthWrapper.tsx
 │   │   └── Navbar.tsx
@@ -438,14 +442,22 @@ await createUserApi(values);                               // ❌ sai
 |---|---|
 | `showCheckbox` (default: `true`) | Bật/tắt checkbox chọn nhiều dòng |
 | `onSelectionChange` | Callback khi người dùng chọn dòng |
-| `pagination` | Cấu hình phân trang; truyền `false` để tắt |
+| `onEmptyClick` | Callback cho nút CTA khi bảng trống |
+| `pagination` | Cấu hình phân trang (Việt hóa mặc định) |
 | `...TableProps` | Toàn bộ props của Ant Design Table |
 
-**Tính năng tích hợp sẵn:**
-- Phân trang nhỏ (`size: 'small'`) với các tùy chọn `[10, 20, 50, 100]`.
-- Hiển thị tổng số dòng: `"Tổng cộng 120 dòng"`.
-- Tự động áp dụng `primaryColor` từ `ThemeProvider`.
-- Bo góc `6px` đồng bộ với toàn bộ layout.
+**Tính năng tích hợp sẵn (V2):**
+- **Row Hover Actions**: Tự động hiện nút chức năng khi hover dòng.
+    - Gom nhóm vào `Dropdown` nếu có từ 3 actions trở lên.
+    - Hỗ trợ `confirm`, `danger`, `icon` trực tiếp trên mỗi action.
+- **Skeleton Rows**: Tự động hiển thị hàng giả lập khi `loading=true` thay vì spinner, giúp ngăn nhảy layout.
+- **Empty CTA**: Hiển thị nút "Bắt đầu bằng cách thêm mới →" khi bảng không có dữ liệu.
+- **Shortcut Support**: Tự động focus ô Search khi nhấn phím `/` hoặc `Ctrl+F`.
+- **Row Striping**: Hỗ trợ tô màu dòng chẵn (`colorFillAlter`) giúp tăng khả năng đọc dữ liệu.
+- **Header Standard**: Tiêu đề in đậm (600), chữ xám (`colorTextSecondary`), viền dưới 2px màu theme.
+- **Dynamic Theming**: Tự động áp dụng `colorPrimaryBg` cho header và hover row.
+- **Accessibility**: Tự động tính toán màu chữ dựa trên chuẩn WCAG 2.1.
+- **Summary Slot**: Tích hợp `AppStatCards` phía trên bảng thông qua prop `statCards`.
 
 ---
 
@@ -491,6 +503,7 @@ const { getColumnSearchProps } = useAppGridSearch();
 - `permission?: string` — nếu user không có quyền, nút **ẩn hoàn toàn** (return `null`).
 - `useDebounce?: boolean` — bật debounce 300ms, ngăn click liên tục gọi API dư thừa.
 - `title?: string` — text hiển thị trong Tooltip khi hover.
+- **Auto Contrast**: Tự động điều chỉnh màu chữ và spinner cho các variant `primary` và `danger` dựa trên màu nền.
 
 ---
 
@@ -551,6 +564,29 @@ const [submitting, setSubmitting] = useState(false);
 
 ---
 
+#### `app/components/common/AppBadge.tsx`
+**Nhãn trạng thái** (Tag) tự động ánh xạ giá trị database sang label tiếng Việt và màu sắc.
+
+**Tính năng:**
+- Hỗ trợ các trạng thái: `ACTIVE`, `INACTIVE`, `LOCKED`, `PENDING`.
+- Tự động chọn icon (`CheckCircle`, `Clock`, v.v.).
+- **Auto Contrast**: Tự động tính màu chữ nếu sử dụng mã màu hex tùy chỉnh.
+
+---
+
+#### `app/components/common/AppStatCards.tsx` *(Mới — 2026-03-08)*
+Component hiển thị nhóm thẻ thống kê tóm tắt số liệu.
+- **Responsive**: Tự động chia 2 cột trên mobile và 4 cột trên desktop.
+- Khi truyền vào `AppGrid` qua prop `statCards`, nó sẽ tự động hiển thị phía trên toolbar.
+
+#### `app/components/common/AppTagList.tsx` *(Mới — 2026-03-08)*
+Quản lý hiển thị danh sách tag (ví dụ: danh sách Role trong bảng Users).
+- **Pattern +N more**: Chỉ hiển thị tối đa `maxVisible` tag (mặc định: 3), phần còn lại thu gọn.
+- **Popover**: Hover vào nhãn dư để xem toàn bộ danh sách trong một khung nổi sạch sẽ.
+- **UX**: Giúp bảo toàn chiều cao dòng (row height) đồng nhất, không làm bảng bị nhảy dòng khi dữ liệu dài.
+
+---
+
 #### `app/components/common/AppFloatButton.tsx`
 **Nút cài đặt nổi** (góc dưới phải màn hình) cho phép tùy chỉnh giao diện real-time và đăng xuất.
 
@@ -591,6 +627,17 @@ Layout chính của toàn ứng dụng. Bọc tất cả các trang.
 ```ts
 const { primaryColor, setPrimaryColor } = useTheme();
 ```
+
+---
+
+#### `lib/colorUtils.ts` & `hooks/useContrastColor.ts`
+**Hệ thống Auto Contrast & Color Utility (Cập nhật 2026-03-08)**.
+
+- **Thuật toán darken/lighten tương đối**: Thay đổi màu dựa trên tỷ lệ % của độ sáng (Lightness) hiện tại thay vì cộng/trừ số cố định.
+- **Safety Floors/Ceilings**: Đảm bảo màu tối (`darken`) không bao giờ thấp hơn 15% (tránh màu đen tuyệt đối) và màu sáng (`lighten`) không quá 92% (tránh màu trắng tuyệt đối).
+- **`getContrastTextColor(bg)`**: Trả về màu chữ (Sáng/Tối) tuân thủ chuẩn WCAG 2.1.
+
+**Quy tắc:** Mọi component có màu nền thay đổi theo theme **phải** dùng hệ thống này để đảm bảo tính khả dụng (Accessibility).
 
 ---
 
@@ -738,10 +785,21 @@ Hệ thống được thiết kế với các chuẩn mực trải nghiệm ngư
    - Cung cấp nút **Xuất Excel** (màu xanh thương hiệu, icon `FileExcelOutlined`) trên các màn hình Danh sách (Tenants, Users, Roles, Products).
    - Tích hợp Tooltip và Debounce để tối ưu trải nghiệm khi xuất tập tin lớn.
 
-6. **Giao diện Lưới & Thanh công cụ (Grid & Toolbar) Tinh giản** *(Mới — 2026-03-07)*
-   - Chuyển toàn bộ các nút chức năng dư thừa chữ (như Advanced Filter, Sort By, Export CSV) sang dạng **nút bo góc vuông Minimalist với Biểu tượng (Icon)**.
-   - Ô tìm kiếm cũng được thay đổi viền để phù hợp với định hướng thiết kế mới: sạch sẽ hơn, nhẹ nhàng hơn và tối đa hoá không gian làm việc.
-   - Di chuyển cột tính năng thao tác (Actions) ra thay vì nằm sau cùng, để người dùng dễ thao tác hơn với các mành hình rộng.
+7. **Hiệu ứng Sidebar Tooltip (Auto-truncate Detection)** *(Mới — 2026-03-08)*
+   - Các mục menu trên Sidebar (`Navbar`) được tích hợp cơ chế tự động phát hiện văn bản bị cắt (ellipses).
+   - Tooltip chỉ xuất hiện khi và chỉ khi văn bản thực tế dài hơn chiều rộng hiển thị của menu.
+   - Sử dụng `mouseEnterDelay: 0.3s` để tránh gây "nháy" Tooltip khi rê chuột nhanh qua danh sách.
+
+8. **Keyboard Access & Shortcuts** *(Mới — 2026-03-08)*
+   - Hỗ trợ thao tác nhanh không cần chuột cho các Power User.
+   - Phím tắt `/` hoặc `Ctrl + F`: Tự động focus vào ô tìm kiếm chính trên bảng dữ liệu hiện tại.
+
+9. **Quy trình checklist khi tạo trang danh sách mới**
+   - [ ] Sử dụng `AppStatCards` để hiển thị tổng quan số liệu.
+   - [ ] Tích hợp `AppGrid` với cấu hình `statCards` và `rowActions`.
+   - [ ] Mọi cột hiển thị danh sách (Tags, Roles) phải đi qua `AppTagList`.
+   - [ ] Định nghĩa `onEmptyClick` để dẫn dắt người dùng khi không có dữ liệu.
+   - [ ] Kiểm tra hiển thị Skeleton khi ở trạng thái Loading.
 
 ---
 

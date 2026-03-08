@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, ConfigProvider, MenuProps } from 'antd';
+import { Layout, Menu, Avatar, ConfigProvider, MenuProps, theme, Dropdown, App, Space, Tooltip } from 'antd';
 import {
     HomeOutlined,
     SettingOutlined,
@@ -11,17 +11,34 @@ import {
     HistoryOutlined,
     PictureOutlined,
     GlobalOutlined,
-    ProjectOutlined
+    ProjectOutlined,
+    LogoutOutlined,
+    KeyOutlined,
+    IdcardOutlined,
+    DownOutlined
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { usePermission } from '@/lib/PermissionProvider';
 import { useTheme } from '@/lib/ThemeProvider';
 import { getUserId } from '@/lib/auth-utils';
+import { darkenColor } from '@/lib/colorUtils';
 import { getUserByIdApi } from '@/services/userService';
 import { FormModal, UserDataType } from '@/app/(pages)/administration/users/FormModal';
+import { logoutApi } from '@/services/authService';
 
 const { Sider } = Layout;
+
+/**
+ * Component hỗ trợ hiển thị label menu với Tooltip khi bị truncate
+ */
+const MenuItemLabel: React.FC<{ label: React.ReactNode }> = ({ label }) => {
+    return (
+        <span className="inline-block align-middle whitespace-normal leading-snug py-1.5 w-full">
+            {label}
+        </span>
+    );
+};
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -31,93 +48,136 @@ const Navbar: React.FC = () => {
     const { t } = useTranslation();
     const { hasPermission, userName, isHostTenant } = usePermission();
     const { primaryColor } = useTheme();
+    const { token } = theme.useToken();
+    const { modal, message } = App.useApp();
 
     const [mounted, setMounted] = useState(false);
     const [openKeys, setOpenKeys] = useState<string[]>([]);
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState<UserDataType | null>(null);
     const [profileLoading, setProfileLoading] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    // DARK COLORED SIDEBAR DESIGN SYSTEM
+    // Tính toán màu nền Sidebar tối đi 45% để đạt contrast chuẩn với text trắng (~4.5:1)
+    const sidebarBg = darkenColor(primaryColor, 45);
+
+    // Memoize menu items to prevent infinite re-renders
+    const items = React.useMemo(() => {
+        const rawItems = [
+            {
+                key: '/',
+                icon: <HomeOutlined style={{ fontSize: 18 }} />,
+                label: t('dashboard', 'Trang chủ'),
+            },
+            {
+                key: 'divider-1',
+                type: 'divider',
+                style: { margin: '12px 12px', borderBlockStart: '1px solid rgba(255,255,255,0.1)' }
+            },
+            {
+                key: '/administration',
+                icon: <SettingOutlined style={{ fontSize: 18 }} />,
+                label: t('system_management', 'Quản trị hệ thống'),
+                children: [
+                    {
+                        key: '/administration/users',
+                        icon: <UserOutlined style={{ fontSize: 16 }} />,
+                        label: t('user_management', 'Quản lý người dùng'),
+                        permission: 'AdministrationService.Users.View'
+                    },
+                    {
+                        key: '/administration/roles',
+                        icon: <TeamOutlined style={{ fontSize: 16 }} />,
+                        label: t('role_management', 'Quản lý vai trò'),
+                        permission: 'AdministrationService.Roles.View'
+                    },
+                    {
+                        key: '/administration/tenants',
+                        icon: <GlobalOutlined style={{ fontSize: 16 }} />,
+                        label: t('tenant_management', 'Quản lý khách hàng'),
+                        permission: 'AdministrationService.Tenants.View',
+                        hostOnly: true
+                    },
+                    {
+                        key: '/administration/audit-logs',
+                        icon: <HistoryOutlined style={{ fontSize: 16 }} />,
+                        label: t('audit_logs', 'Lịch sử Jobs'),
+                    },
+                ],
+            },
+            {
+                key: 'divider-2',
+                type: 'divider',
+                style: { margin: '12px 12px', borderBlockStart: '1px solid rgba(255,255,255,0.1)' }
+            },
+            {
+                key: '/master-data',
+                icon: <DatabaseOutlined style={{ fontSize: 18 }} />,
+                label: t('master_data', 'Quản lý dữ liệu chủ'),
+                children: [
+                    {
+                        key: '/master-data/products',
+                        icon: <ProjectOutlined style={{ fontSize: 16 }} />,
+                        label: t('product_management', 'Quản lý sản phẩm'),
+                    },
+                ],
+            },
+        ];
+
+        const mapItem = (item: any): any => {
+            if (item.type === 'divider') return item;
+            
+            const label = <MenuItemLabel label={item.label} />;
+            const children = item.children ? item.children.map(mapItem) : undefined;
+            
+            return { ...item, label, children };
+        };
+
+        return rawItems
+            .map(item => {
+                if (item?.type === 'divider') return item;
+                
+                // Lọc con
+                let filteredChildren = (item as any).children;
+                if (filteredChildren) {
+                    filteredChildren = filteredChildren.filter((child: any) => {
+                        if (child.hostOnly && !isHostTenant) return false;
+                        if (child.permission) return hasPermission(child.permission);
+                        return true;
+                    }).map((child: any) => {
+                        const { permission, hostOnly, ...rest } = child;
+                        return mapItem(rest); // Áp dụng tooltip
+                    });
+                }
+
+                const { permission, hostOnly, ...rest } = item as any;
+                const finalItem = filteredChildren ? { ...rest, children: filteredChildren } : rest;
+                return mapItem(finalItem); // Áp dụng tooltip cho cả cha
+            })
+            .filter(item => {
+                if (item?.type === 'divider') return true;
+                if ((item as any).children) {
+                    return (item as any).children.length > 0;
+                }
+                const key = (item as any).key;
+                return !key || hasPermission(key as string);
+            }) as MenuItem[];
+    }, [t, hasPermission, isHostTenant]);
 
     useEffect(() => {
         setMounted(true);
-        // Tự động mở menu cha nếu pathname đang ở menu con
-        const keys = getAllKeys(items);
-        const activeParent = keys.find(key => pathname.startsWith(key));
-        if (activeParent) setOpenKeys([activeParent]);
-    }, [pathname]);
+    }, []);
 
-    const items: MenuItem[] = [
-        {
-            key: '/',
-            icon: <HomeOutlined />,
-            label: t('dashboard', 'Trang chủ'),
-        },
-        {
-            key: '/administration',
-            icon: <SettingOutlined />,
-            label: t('system_management', 'Quản trị hệ thống'),
-            children: [
-                {
-                    key: '/administration/users',
-                    icon: <UserOutlined />,
-                    label: t('user_management', 'Quản lý người dùng'),
-                    permission: 'AdministrationService.Users.View'
-                },
-                {
-                    key: '/administration/roles',
-                    icon: <TeamOutlined />,
-                    label: t('role_management', 'Quản lý vai trò'),
-                    permission: 'AdministrationService.Roles.View'
-                },
-                {
-                    key: '/administration/tenants',
-                    icon: <GlobalOutlined />,
-                    label: t('tenant_management', 'Quản lý khách hàng'),
-                    permission: 'AdministrationService.Tenants.View',
-                    hostOnly: true
-                },
-                {
-                    key: '/administration/audit-logs',
-                    icon: <HistoryOutlined />,
-                    label: t('audit_logs', 'Lịch sử Jobs'),
-                },
-            ],
-        },
-        {
-            key: '/master-data',
-            icon: <DatabaseOutlined />,
-            label: t('master_data', 'Quản lý dữ liệu chủ'),
-            children: [
-                {
-                    key: '/master-data/products',
-                    icon: <ProjectOutlined />,
-                    label: t('product_management', 'Quản lý sản phẩm'),
-                },
-            ],
-        },
-    ]
-    .map(item => {
-        if (item.children) {
-            const filteredChildren = item.children.filter((child: any) => {
-                // Check Host-only restriction
-                if (child.hostOnly && !isHostTenant) return false;
-                
-                // Check Permission
-                if (child.permission) return hasPermission(child.permission);
-                
-                // Default fallback if no permission/hostOnly specified
-                return !child.key || hasPermission(child.key);
-            });
-            return { ...item, children: filteredChildren };
+    useEffect(() => {
+        if (mounted) {
+            const keys = getAllKeys(items);
+            const activeParent = keys.find(key => pathname.startsWith(key));
+            if (activeParent && !openKeys.includes(activeParent)) {
+                setOpenKeys([activeParent]);
+            }
         }
-        return item;
-    })
-    .filter(item => {
-        if (item.children) {
-            return item.children.length > 0;
-        }
-        return !item.key || hasPermission(item.key as string);
-    }) as MenuItem[];
+    }, [pathname, items, mounted]);
 
     const onOpenChange = (keys: string[]) => {
         setOpenKeys(keys);
@@ -143,52 +203,91 @@ const Navbar: React.FC = () => {
         }
     };
 
+    const handleLogout = () => {
+        modal.confirm({
+            title: t('logout_confirm_title', 'Xác nhận đăng xuất'),
+            content: t('logout_confirm_desc', 'Bạn có chắc chắn muốn rời khỏi hệ thống không?'),
+            okText: t('logout', 'Đăng xuất'),
+            okType: 'danger',
+            cancelText: t('cancel', 'Hủy'),
+            onOk: () => {
+                logoutApi();
+            }
+        });
+    };
+
+    const profileMenuItems: MenuProps['items'] = [
+        {
+            key: 'profile',
+            label: t('profile_info', 'Thông tin tài khoản'),
+            icon: <IdcardOutlined />,
+            onClick: handleProfileClick
+        },
+        {
+            key: 'password',
+            label: t('change_password', 'Đổi mật khẩu'),
+            icon: <KeyOutlined />,
+            onClick: () => message.info('Tính năng đang phát triển...')
+        },
+        {
+            type: 'divider',
+        },
+        {
+            key: 'logout',
+            label: t('logout', 'Đăng xuất'),
+            icon: <LogoutOutlined />,
+            danger: true,
+            onClick: handleLogout
+        },
+    ];
+
     if (!mounted) {
-        return <Sider width={260} theme="light" className="min-h-screen border-r-0 shadow-sm" style={{ background: '#ffffff' }} />;
+        return <Sider width={260} theme="light" className="min-h-screen border-r shadow-sm" style={{ background: '#ffffff' }} />;
     }
 
     return (
         <Sider
             width={260}
             theme="light"
-            className="min-h-screen border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]"
+            className="h-screen flex flex-col shadow-2xl border-none relative z-[100]"
             style={{
-                background: '#ffffff',
-                display: 'flex',
-                flexDirection: 'column',
+                backgroundColor: sidebarBg,
+                transition: 'all 0.3s ease'
             }}
         >
-            {/* LOGO AREA */}
-            <div style={{ flex: 'none', padding: '32px 28px 24px' }}>
-                <div className="flex items-center gap-3 mb-8 px-1 cursor-pointer" onClick={() => router.push('/')}>
+            {/* LOGO & BRAND */}
+            <div className="shrink-0 p-5">
+                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => router.push('/')}>
                     <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-[#2bd4bd33]"
-                        style={{ backgroundColor: primaryColor }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 text-white text-xl backdrop-blur-md transition-transform group-hover:scale-105 shadow-inner"
                     >
                         <PictureOutlined />
                     </div>
-                    <div>
-                        <div className="font-extrabold text-[#1e293b] text-base leading-tight">Mint ERP</div>
-                        <div className="text-[10px] uppercase font-black tracking-widest leading-none mt-1" style={{ color: primaryColor }}>Vibe Check</div>
+                    <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-white text-[17px] leading-none tracking-tight">Mint ERP</span>
+                        <span className="flex-none bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] tracking-widest leading-none shadow-sm">
+                            PREMIUM
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {/* MAIN MENU */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* MAIN MENU SCROLLABLE */}
+            <div className="flex-1 overflow-y-auto custom-sidebar-scrollbar py-2 px-2">
                 <ConfigProvider
                     theme={{
                         components: {
                             Menu: {
                                 itemBg: 'transparent',
-                                itemColor: '#64748b',
-                                itemSelectedColor: '#1e293b',
-                                itemSelectedBg: primaryColor,
-                                itemHoverColor: '#1e293b',
-                                itemHoverBg: '#f8fafc',
-                                itemBorderRadius: 16,
-                                itemMarginInline: 16,
-                                itemMarginBlock: 8,
+                                itemColor: 'rgba(255,255,255,0.7)',
+                                itemSelectedColor: '#ffffff',
+                                itemSelectedBg: 'rgba(255,255,255,0.22)',
+                                itemHoverColor: '#ffffff',
+                                itemHoverBg: 'rgba(255,255,255,0.1)',
+                                itemBorderRadius: 8,
+                                itemMarginInline: 8,
+                                itemMarginBlock: 4,
+                                subMenuItemBg: 'transparent',
                             },
                         },
                     }}
@@ -203,39 +302,46 @@ const Navbar: React.FC = () => {
                         style={{
                             borderRight: 0,
                             backgroundColor: 'transparent',
-                            fontSize: 14,
-                            fontWeight: 600,
                         }}
                     />
                 </ConfigProvider>
             </div>
 
-            {/* BOTTOM SECTION */}
-            <div className="px-4 py-6 mt-auto flex flex-col gap-4">
-                <div
-                    onClick={handleProfileClick}
-                    className="mx-2 p-3 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-3"
+            {/* BOTTOM SECTION - USER PROFILE */}
+            <div className="shrink-0 border-t border-white/10 p-3 bg-black/15">
+                <Dropdown 
+                    menu={{ items: profileMenuItems }} 
+                    placement="topRight" 
+                    trigger={['click']}
+                    onOpenChange={(open) => setDropdownOpen(open)}
                 >
-                    <Avatar
-                        style={{
-                            backgroundColor: primaryColor,
-                            color: '#1e293b',
-                            fontWeight: 'bold',
-                            boxShadow: `0 4px 12px ${primaryColor}44`
-                        }}
-                        size={40}
-                    >
-                        {userName ? userName.charAt(0).toUpperCase() : 'A'}
-                    </Avatar>
-                    <div style={{ overflow: 'hidden' }}>
-                        <div style={{ color: '#1e293b', fontWeight: '800', fontSize: '13px', lineHeight: 1.2 }}>
-                            {userName || 'Alex Mitchell'}
+                    <div className="p-2.5 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-between group backdrop-blur-sm border border-transparent">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <Avatar
+                                style={{
+                                    backgroundColor: 'rgba(255,255,255,0.20)',
+                                    color: '#ffffff',
+                                    fontWeight: 'bold',
+                                    flexShrink: 0,
+                                }}
+                                size={40}
+                            >
+                                {userName ? userName.charAt(0).toUpperCase() : 'A'}
+                            </Avatar>
+                            <div className="overflow-hidden">
+                                <div className="text-white font-semibold text-[14px] leading-tight truncate">
+                                    {userName || 'User'}
+                                </div>
+                                <div className="text-white/60 text-[10px] mt-0.5 truncate uppercase tracking-wider font-medium">
+                                    {profileLoading ? 'Đang tải...' : (isHostTenant ? 'Quản trị hệ thống' : 'Người dùng')}
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: 2 }}>
-                            {profileLoading ? 'Loading...' : 'Project Manager'}
-                        </div>
+                        <DownOutlined 
+                            className={`text-white/40 text-[10px] transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : 'rotate-0'}`} 
+                        />
                     </div>
-                </div>
+                </Dropdown>
             </div>
 
             <FormModal
@@ -244,6 +350,123 @@ const Navbar: React.FC = () => {
                 onSuccess={() => setProfileModalOpen(false)}
                 onClose={() => setProfileModalOpen(false)}
             />
+
+            <style jsx global>{`
+                /* Menu Group Parent Style */
+                .ant-menu-root > .ant-menu-submenu > .ant-menu-submenu-title,
+                .ant-menu-root > .ant-menu-item {
+                    font-size: 13px !important;
+                    font-weight: 600 !important;
+                    color: rgba(255,255,255,0.95) !important;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+
+                /* Submenu Item (Child) Style */
+                .ant-menu-sub .ant-menu-item {
+                    font-size: 14px !important;
+                    font-weight: 400 !important;
+                    color: rgba(255,255,255,0.75) !important;
+                    text-transform: none;
+                    letter-spacing: normal;
+                }
+
+                /* Layout Foundation for wrapping and alignment */
+                .ant-menu-item, .ant-menu-submenu-title {
+                    height: auto !important;
+                    line-height: normal !important;
+                    min-height: 44px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    padding-top: 6px !important;
+                    padding-bottom: 6px !important;
+                    transition: all 150ms ease !important;
+                }
+
+                .ant-menu-title-content {
+                    display: flex !important;
+                    align-items: center !important;
+                    flex: 1 !important;
+                    min-width: 0 !important;
+                    white-space: normal !important;
+                    overflow: visible !important;
+                }
+
+                /* Icon Alignment */
+                .ant-menu-item .ant-menu-item-icon, 
+                .ant-menu-submenu-title .ant-menu-item-icon {
+                    color: rgba(255,255,255,0.6) !important;
+                    flex-shrink: 0 !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 18px !important;
+                    transition: all 150ms ease;
+                }
+
+                /* Active State: Menu Item */
+                .ant-menu-item-selected {
+                    background-color: rgba(255,255,255,0.15) !important;
+                    color: #ffffff !important;
+                    font-weight: 600 !important;
+                    border-left: 3px solid #ffffff !important;
+                }
+                
+                .ant-menu-item-selected::after {
+                    display: none !important;
+                }
+
+                /* Submenu Title Highlighting */
+                .ant-menu-submenu-selected > .ant-menu-submenu-title,
+                .ant-menu-submenu-open > .ant-menu-submenu-title {
+                    color: #ffffff !important;
+                }
+
+                .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon,
+                .ant-menu-submenu-open > .ant-menu-submenu-title .ant-menu-item-icon {
+                    color: #ffffff !important;
+                }
+                
+                .ant-menu-item:hover, .ant-menu-submenu-title:hover {
+                    background-color: rgba(255,255,255,0.08) !important;
+                }
+
+                .ant-menu-item:hover .ant-menu-item-icon,
+                .ant-menu-submenu-title:hover .ant-menu-item-icon,
+                .ant-menu-item-selected .ant-menu-item-icon {
+                    color: #ffffff !important;
+                }
+
+                /* Chevron icon style */
+                .ant-menu-submenu-arrow {
+                    color: rgba(255,255,255,0.4) !important;
+                    transform: scale(0.85);
+                    position: static !important;
+                    margin-left: 8px !important;
+                }
+
+                /* Scrollbar Customization */
+                .custom-sidebar-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-sidebar-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-sidebar-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.15);
+                    border-radius: 10px;
+                }
+                .custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255,255,255,0.25);
+                }
+
+                /* Layout helper */
+                .ant-menu-inline .ant-menu-sub.ant-menu-inline {
+                    background: transparent !important;
+                }
+            `}</style>
         </Sider>
     );
 }
@@ -251,7 +474,7 @@ const Navbar: React.FC = () => {
 const getAllKeys = (items: any[]): string[] => {
     let keys: string[] = [];
     items.forEach(item => {
-        if (item.children) {
+        if (item && item.children) {
             keys.push(item.key);
             keys = [...keys, ...getAllKeys(item.children)];
         }

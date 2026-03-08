@@ -122,7 +122,7 @@ export default function RoleListPage() {
     // ── Table columns ─────────────────────────────────────────────────────────
     const columns: ColumnsType<RoleData> = [
         {
-            title: <span className="text-white font-semibold">{t('actions')}</span>,
+            title: t('actions'),
             key: 'action',
             width: 140,
             align: 'center',
@@ -149,7 +149,7 @@ export default function RoleListPage() {
             render: (text) => text || <span className="text-gray-300 italic">—</span>,
         },
         {
-            title: <span className="text-white font-semibold">{t('status')}</span>,
+            title: t('status'),
             dataIndex: 'isActive',
             key: 'isActive',
             width: 130,

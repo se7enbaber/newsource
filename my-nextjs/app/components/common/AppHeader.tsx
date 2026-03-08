@@ -69,7 +69,7 @@ export default function AppHeader() {
     );
 
     return (
-        <header className="px-6 py-6 flex items-center justify-between bg-transparent flex-none">
+        <header className="px-4 py-4 flex items-center justify-between bg-transparent flex-none">
             {/* Left: Tenant Info */}
             <div className="flex items-center gap-4">
                 <Popover 
