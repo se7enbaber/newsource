@@ -13,7 +13,15 @@ builder.Host.AddCommonSerilog();
 
 // Add services to the container.
 builder.Services.AddOpenApi();
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+
+// Redis Backplane for scaling
+var redisHost = builder.Configuration["Redis:Host"] ?? "redis";
+var redisPort = builder.Configuration.GetValue<int>("Redis:Port", 6379);
+var redisPassword = builder.Configuration["Redis:Password"] ?? "redis123";
+var redisConnectionString = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false";
+
+signalRBuilder.AddStackExchangeRedis(redisConnectionString);
 builder.Services.AddControllers();
 builder.Services.AddSingleton<ISignalRService, SignalRService.Services.SignalRService>();
 

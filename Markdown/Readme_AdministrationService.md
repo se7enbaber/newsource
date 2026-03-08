@@ -27,6 +27,8 @@
 4. [Vấn đề Multi-tenant & Global Query Filter](#4-vấn-đề-multi-tenant--global-query-filter)
 5. [Hệ thống Phân quyền Động (Dynamic Permissions)](#5-hệ-thống-phân-quyền-động-dynamic-permissions)
 6. [Lỗi thường gặp & Debug Checklist](#6-lỗi-thường-gặp--debug-checklist)
+7. [Hệ thống Feature Toggle (Tenant Control)](#7-hệ-thống-feature-toggle-tenant-control)
+8. [Kết nối SignalR Service & Resilience (Polly)](#8-kết-nối-signalr-service--resilience-polly)
 
 ---
 
@@ -798,6 +800,38 @@ public class UsersController : ControllerBase { ... }
 3. **Authorization**: `FeatureAuthorizationHandler` kiểm tra:
    - Nếu User là **Admin** hệ thống: Luôn trả về `Succeeded` (Bypass).
    - Nếu Claim `Feature` trong JWT Token chứa giá trị `XYZ`: Trả về `Succeeded`.
+
+---
+
+## 8. Kết nối SignalR Service & Resilience (Polly)
+
+### 8.1. Tổng quan
+AdministrationService gọi HTTP POST sang SignalRService microservice để gửi thông báo real-time. Do đây là giao tiếp liên-dịch vụ (Inter-service communication) và được sử dụng nhiều trong Hangfire jobs, cơ chế Resilience được tích hợp để đảm bảo tính ổn định của hệ thống.
+
+### 8.2. Cơ chế Resilience (Standard Resilience Handler)
+Sử dụng thư viện `Microsoft.Extensions.Http.Resilience` (.NET 8/10 built-in) với cấu hình:
+
+| Chiến lược | Cấu hình | Mô tả |
+|-----------|----------|-------------|
+| **Retry** | 3 lần, Exponential Backoff | Thử lại tự động khi gặp lỗi mạng tạm thời. Khoảng cách giữa các lần thử tăng dần. |
+| **Circuit Breaker** | Mở sau 5 lỗi liên tiếp | Nếu server SignalRService lỗi liên tục, cơ chế ngắt mạch sẽ kích hoạt trong 30s để bảo vệ tài nguyên hệ thống. |
+| **Timeout** | 10 giây/request | Giới hạn thời gian chờ phản hồi tối đa 10 giây cho mỗi lượt retry. |
+
+### 8.3. Xử lý lỗi trong Background Jobs (Hangfire)
+- Dịch vụ `SignalRService` (class implementation) được bọc trong block `try-catch` đặc biệt.
+- Khi Circuit Breaker đang **MỞ** (`BrokenCircuitException`), hệ thống sẽ **Log Warning** và bỏ qua bước gửi thông báo.
+- Điều này giúp Hangfire Job tiếp tục hoàn thành các tác vụ business quan trọng khác mà không bị đánh dấu là "Failed" chỉ vì dịch vụ thông báo gặp sự cố.
+
+### 8.4. Cấu hình (appsettings.json)
+```json
+"SignalRService": {
+  "BaseUrl": "http://signalr-service:5003",
+  "RetryCount": 3,
+  "CircuitBreakerThreshold": 5,
+  "TimeoutSeconds": 10
+}
+```
+
    - Trường hợp khác: Trả về `Failed` (403 Forbidden).
 
 ### 7.5. Debug Feature
@@ -824,3 +858,13 @@ Việc tách biệt này giúp hiệu suất của `AdministrationService` khi x
 ---
 
 [Quay lại đầu trang ▲](#administration-service--tài-liệu-kỹ-thuật-chi-tiết)
+
+## 9. Hệ thống Caching (Redis & Distributed Cache)
+
+Hệ thống sử dụng **IDistributedCache** (Redis) để cache các thông tin nhạy cảm về hiệu năng nhưng ít thay đổi như permissions của từng role theo tenant.
+
+### Cơ chế hoạt động:
+- **Redis as Primary**: Nếu Redis container (port 6379) sẵn sàng, IDistributedCache sẽ trỏ tới Redis.
+- **MemoryCache as Fallback**: Nếu Redis down hoặc không kết nối được, hệ thống tự động fallback về **IMemoryCache** (Internal RAM) thông qua một lớp Wrapper, đảm bảo ứng dụng vẫn chạy ổn định.
+- **TTL (Time to Live)**: Các key permissions (permissions_{TenantId}_{RoleName}) được cache trong **1 giờ**.
+- **Serialization**: Dữ liệu (List string) được serialize thành JSON trước khi lưu vào Redis.

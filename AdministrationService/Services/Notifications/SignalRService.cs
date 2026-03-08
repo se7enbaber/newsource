@@ -1,11 +1,15 @@
+extern alias PollyCore;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
+using BrokenCircuitException = PollyCore::Polly.CircuitBreaker.BrokenCircuitException;
 
 namespace AdministrationService.Services.Notifications
 {
     /// <summary>
-    /// Interface để gửi thông báo real-time qua SignalR Service (microservice riêng biệt).
-    /// Implementation sẽ gọi HTTP POST sang SignalRService thay vì dùng IHubContext trực tiếp.
+    /// Interface để gửi thông báo real-time qua SignalR Service.
     /// </summary>
     public interface ISignalRService
     {
@@ -14,72 +18,73 @@ namespace AdministrationService.Services.Notifications
     }
 
     /// <summary>
-    /// HTTP Client wrapper — gọi sang SignalRService API để broadcast thông báo.
-    /// Đây là cách AdministrationService (và Hangfire jobs) giao tiếp với SignalRService.
+    /// HTTP Client wrapper với Resilience (Retry, Circuit Breaker, Timeout).
     /// </summary>
-    public class SignalRHttpClient : ISignalRService
+    public class SignalRService : ISignalRService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<SignalRHttpClient> _logger;
-        private readonly IConfiguration _configuration;
+        private readonly ILogger<SignalRService> _logger;
 
-        public SignalRHttpClient(
+        public SignalRService(
             IHttpClientFactory httpClientFactory,
-            ILogger<SignalRHttpClient> logger,
-            IConfiguration configuration)
+            ILogger<SignalRService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _configuration = configuration;
         }
-
-        private string SignalRServiceBaseUrl =>
-            _configuration["SignalRService:BaseUrl"] ?? "http://localhost:5063";
 
         public async Task SendNotificationAsync(Guid tenantId, string title, string message, string type = "info")
         {
-            try
+            await ExecuteWithResilienceAsync(async (client) =>
             {
-                var client = _httpClientFactory.CreateClient("SignalRService");
                 var payload = new { tenantId, title, message, type };
                 var content = new StringContent(
                     JsonSerializer.Serialize(payload),
                     Encoding.UTF8,
                     "application/json");
 
-                var response = await client.PostAsync($"{SignalRServiceBaseUrl}/api/notifications", content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("SignalRService returned {StatusCode} when sending notification", response.StatusCode);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Không throw để tránh làm hỏng business logic nếu SignalRService không chạy
-                _logger.LogWarning(ex, "Failed to send notification via SignalRService. Skipping.");
-            }
+                return await client.PostAsync("api/notifications", content);
+            }, "SendNotification");
         }
 
         public async Task SendJobStatusAsync(Guid tenantId, string jobId, string status, string message)
         {
-            try
+            await ExecuteWithResilienceAsync(async (client) =>
             {
-                var client = _httpClientFactory.CreateClient("SignalRService");
                 var payload = new { tenantId, jobId, status, message };
                 var content = new StringContent(
                     JsonSerializer.Serialize(payload),
                     Encoding.UTF8,
                     "application/json");
 
-                var response = await client.PostAsync($"{SignalRServiceBaseUrl}/api/notifications/job-status", content);
+                return await client.PostAsync("api/notifications/job-status", content);
+            }, "SendJobStatus");
+        }
+
+        /// <summary>
+        /// Thực thi request với cơ chế catch BrokenCircuitException để không làm hỏng flow chính (như Hangfire jobs).
+        /// </summary>
+        private async Task ExecuteWithResilienceAsync(Func<HttpClient, Task<HttpResponseMessage>> action, string operationName)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("SignalRService");
+                var response = await action(client);
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("SignalRService returned {StatusCode} when sending job status", response.StatusCode);
+                    _logger.LogWarning("SignalRService returned {StatusCode} for {Operation}", response.StatusCode, operationName);
                 }
+            }
+            catch (BrokenCircuitException ex)
+            {
+                // Circuit Breaker đang mở -> Log warning và bỏ qua để job không bị fail
+                _logger.LogWarning("Circuit Breaker is OPEN for SignalRService. Skipping {Operation}. Error: {Message}", operationName, ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send job status via SignalRService. Skipping.");
+                // Các lỗi khác sau khi đã dùng hết Retry
+                _logger.LogError(ex, "Failed to execute {Operation} via SignalRService after all attempts.", operationName);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿# Dịch vụ SignalR (SignalRService)
+# Dịch vụ SignalR (SignalRService)
 
 ## 🏗 Tổng quan Kiến trúc
 
@@ -6,19 +6,24 @@
 
 Thay vì để API chính (AdministrationService) phải duy trì và xử lý hàng nghìn kết nối WebSocket chiếm nhiều tài nguyên, toàn bộ hệ thống Push Notification (Thông báo đẩy) đã được tách rời hoàn toàn về đây, giúp giảm tải (load decoupling) và tăng tính bền bỉ (durability) cho toàn bộ hệ thống.
 
-`	ext
+```text
 ┌─────────────────────────┐          ┌──────────────────────────┐
 │ Trình duyệt (Người dùng) │ Websocket│ SignalR Service          │
 │ Next.js Client           ├─────────►│ Cổng NotificationHub     │
-└─────────────────────────┘          └───────────▲──────────────┘
-                                                 │
+└─────────────────────────┘          └───────────▲──────┬───────┘
+                                                 │      │
+                                                 │      ▼ Scalability
+                           ┌─────────────────────┴─────────────┐
+                           │   Redis Backplane (Pub/Sub)       │
+                           └───────────────────────────────────┘
+                                                 ▲
                                                  │ REST API (POST)
                            ┌─────────────────────┴─────────────┐
                            │ Administration Service (Backend)  │
                            │   - Các Logic Nghiệp vụ           │
                            │   - Hangfire Background Jobs      │
                            └───────────────────────────────────┘
-`
+```
 
 ### Cơ chế hoạt động cốt lõi
 *   **WebSockets qua SignalR**: Các client (thông qua Gateway hoặc trực tiếp từ Next.js UI) sẽ kết nối và duy trì kết nối hai chiều gốc (duplex connection) vào các Hub như /notificationHub.
@@ -38,5 +43,22 @@ Thay vì để API chính (AdministrationService) phải duy trì và xử lý h
 
 ---
 
+## ⚙️ Cấu hình Nâng cao
+
+### 1. Khả năng mở rộng (Scalability - Redis Backplane)
+Dự án tích hợp **StackExchange.Redis** làm Backplane cho SignalR. Khi hệ thống scale lên nhiều instance của `SignalRService`, Redis sẽ đảm bảo các thông điệp broadcast được đồng bộ xuyên suốt tất cả các node.
+- **Package**: `Microsoft.AspNetCore.SignalR.StackExchangeRedis`
+- **Cấu hình**: Đọc `Redis:Host`, `Redis:Port`, `Redis:Password` từ biến môi trường.
+
+### 2. Giám sát Sức khỏe (Health Checks)
+Tích hợp sẵn endpoint `/health` để YARP Gateway và Docker có thể giám sát trạng thái hoạt động:
+- `/health`: Kiểm tra sức khỏe tổng quát.
+- `/health/live`: Liveness probe (Service còn sống).
+
+---
+
 ### Khởi chạy môi trường Phát triển (Local)
-Khi bạn lập trình tại máy cá nhân, chỉ cần sử dụng script start-terminals.cmd. Service này sẽ được khởi động song song với AdministrationService, GatewayService và Next.js. Hãy đảm bảo các port (ví dụ: 5063 hoặc 7251) không bị xung đột với Gateway chuyển tiếp (YARP port 5000).
+Khi bạn lập trình tại máy cá nhân, bạn có thể chạy:
+1. **Docker (Khuyên dùng)**: `docker compose up -d signalr`
+2. **Thủ công**: `dotnet run` bên trong thư mục `SignalRService`.
+3. **Start Scripts**: Sử dụng `start-terminals.cmd` ở thư mục gốc.

@@ -8,6 +8,7 @@ Công nghệ cốt lõi được sử dụng là **YARP (Yet Another Reverse Pro
 - **Single Entry Point**: Tất cả các request từ Next.js thay vì gọi rải rác thẳng vào `AdministrationService` (port 7027) sẽ được gọi duy nhất thông qua Gateway (port 5000/5001).
 - **CORS Management**: Gateway cấu hình CORS tập trung để cho phép Next.js và các app nội bộ gọi vào.
 - **SSL Bypass / Forwarding**: Xử lý mượt mà certificate SSL cho môi trường Localhost (tự động bỏ qua lỗi SSL khi gọi nội bộ xuống `https://localhost:7027`).
+- **Active Health Checks**: Gateway liên tục kiểm tra trạng thái của các microservice backend (Administration, SignalR) để đảm bảo không điều hướng request vào các node đang lỗi.
 - Tại đây trong tương lai có thể thêm: *Rate Limiting*, *Caching*, *Load Balancing*, hoặc *Internal Firewall*.
 
 ## Cấu trúc Route (YARP)

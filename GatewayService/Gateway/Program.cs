@@ -25,7 +25,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.RequireHttpsMetadata = false; // Phục vụ dev local bằng chứng chỉ tự ký
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateAudience = false // Hoặc theo cấu hình của OpenIddict
+            ValidateAudience = false, // Hoặc theo cấu hình của OpenIddict
+            ValidIssuer = builder.Configuration["ASPNETCORE_ISSUER_URI"],
+            ValidateIssuer = !string.IsNullOrEmpty(builder.Configuration["ASPNETCORE_ISSUER_URI"])
         };
     });
 

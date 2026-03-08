@@ -11,6 +11,8 @@ volumes:
     driver: local
   minio-data:
     driver: local
+  redis-data:
+    driver: local
 
 services:
   postgres:
@@ -57,8 +59,14 @@ services:
       - ASPNETCORE_URLS=http://+:${ADMIN_SERVICE_PORT}
       - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION}
       - SignalRService__BaseUrl=${SIGNALR_BASE_URL}
+      - ASPNETCORE_ISSUER_URI=${ASPNETCORE_ISSUER_URI}
+      - Redis__Host=${REDIS_HOST}
+      - Redis__Port=${REDIS_PORT}
+      - Redis__Password=${REDIS_PASSWORD}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -87,6 +95,7 @@ services:
       - ReverseProxy__Clusters__admin-cluster__Destinations__admin-service__Address=http://admin-service:${ADMIN_SERVICE_PORT}
       - ReverseProxy__Clusters__signalr-cluster__Destinations__signalr-service__Address=http://signalr:${SIGNALR_SERVICE_PORT}
       - JwtSettings__Authority=http://admin-service:${ADMIN_SERVICE_PORT}
+      - ASPNETCORE_ISSUER_URI=${ASPNETCORE_ISSUER_URI}
     depends_on:
       admin-service:
         condition: service_started
@@ -113,9 +122,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=http://+:${SIGNALR_SERVICE_PORT}
+      - Redis__Host=${REDIS_HOST}
+      - Redis__Port=${REDIS_PORT}
+      - Redis__Password=${REDIS_PASSWORD}
     depends_on:
       admin-service:
         condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - app-network
     deploy:
@@ -176,6 +190,34 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
+
+  # ── Redis Cache ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: app-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   # ── File Service ──────────────────────────────────────────
   file-service:

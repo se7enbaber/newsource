@@ -18,6 +18,7 @@
 | Containerization | ✅ Hoàn thiện | Đã có Dockerfile và docker-compose.yml |
 | Centralized Logging | ✅ Hoàn thiện | Tích hợp Serilog + Seq tập trung |
 | Health Checks | ✅ Hoàn thiện | Đã expose `/health` endpoint cho tất cả service |
+| Distributed Caching | ✅ Hoàn thiện | Redis distributed cache + SignalR Redis backplane |
 | Hướng dẫn (Feature Tour) | ✅ Hoàn thiện | AppTour đa ngôn ngữ trên các trang nghiệp vụ chính |
 | Xuất Excel (Export) | ✅ Hoàn thiện | Hỗ trợ xuất Excel trên Tenants, Users, Roles, Products |
 | Audit Log UI | ⚠️ Một phần | Có Auto Audit ở DB, chưa có giao diện xem |
@@ -191,7 +192,8 @@
 GIAI ĐOẠN 1 — Production Readiness
 ├── 1.1  Docker + Docker Compose          ✅ Hoàn thiện
 ├── 1.2  Centralized Logging (Serilog)    ✅ Hoàn thiện
-└── 1.3  Health Check Endpoints           ✅ Hoàn thiện
+├── 1.3  Health Check Endpoints           ✅ Hoàn thiện
+└── 1.4  Distributed Caching (Redis)      ✅ Hoàn thiện
 
 GIAI ĐOẠN 2 — Nghiệp vụ Mở rộng
 ├── 2.1  Audit Log UI                     🟠 Trung bình - Cao

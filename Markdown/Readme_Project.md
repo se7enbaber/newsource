@@ -22,13 +22,14 @@ Dự án này bao gồm hai thành phần chính: một hệ thống Backend (AP
 ┌─────────────┐  HTTP   ┌──────────────────┐  ┌──────────────────┐
 │SignalR Svc  │◄────────│Administration Svc│  │  File Service    │
 │(WebSocket)  │  POST   │  (Core API)      │  │  (Upload/Download)│
-└─────────────┘         └────────┬─────────┘  └────────┬─────────┘
-                                 │ EF Core              │ S3 API
-                                 ▼                      ▼
-                         ┌──────────────┐      ┌──────────────────┐
-                         │   Database   │      │      Minio       │
-                         │ (PostgreSQL) │      │ (File Storage)   │
-                         └──────────────┘      └──────────────────┘
+└──────┬──────┘         └────────┬────┬────┘  └────────┬─────────┘
+       │                         │    │                │
+       │         Distributed     │    │ EF Core        │ S3 API
+       └────────► Cache (Redis) ◄┘    ▼                ▼
+                               ┌──────────────┐      ┌──────────────────┐
+                               │   Database   │      │      Minio       │
+                               │ (PostgreSQL) │      │ (File Storage)   │
+                               └──────────────┘      └──────────────────┘
 ```
 
 > **Lưu ý Quan trọng:** Luôn luôn cập nhật Tổng quan Kiến trúc này (ASCII diagram) mỗi khi bổ sung hoặc thay đổi luồng đi của một Microservice mới trong hệ thống để đảm bảo tài liệu phản ánh đúng thực tế!
@@ -54,7 +55,7 @@ Dự án này bao gồm hai thành phần chính: một hệ thống Backend (AP
 
 ### Các tính năng nổi bật:
 - **Multi-tenant Architecture:** Khả năng phục vụ nhiều tenant (khách hàng/tổ chức) trên cùng một instances. Cấu hình kết nối DB tự động (Dynamic Connection String) và Global Query Filter áp dụng qua Entity Framework Core.
-- **Dynamic Permissions (Phân quyền động):** Hệ thống phân quyền sử dụng JWT RoleClaims, cache trên RAM qua `IMemoryCache` và được hỗ trợ attribute custom `[HasPermission]`.
+- **Dynamic Permissions (Phân quyền động):** Hệ thống phân quyền sử dụng JWT RoleClaims, cache tập trung trên **Redis** (Distributed Cache) với cơ chế fallback về `IMemoryCache` nếu Redis mất kết nối. Bảo vệ API bằng custom attribute `[HasPermission]`.
 - **Identity & Authentication:** Quản lý người dùng qua `ASP.NET Core Identity` với mã hóa tiêu chuẩn và phát hành JWT OIDC thông qua `OpenIddict`.
 - **Auto Audit & Soft Delete:** Sử dụng `SaveChangesAsync` override trên `ApplicationDbContext` để tự động cập nhật các field audit và không xóa vĩnh viễn dữ liệu.
 

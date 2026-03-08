@@ -12,7 +12,8 @@ using OpenIddict.Server.AspNetCore;
 using System.Security.Claims;
 using AdministrationService.Authorization;
 using AdministrationService.Services;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 public class AuthorizationController : Controller
 {
@@ -20,14 +21,14 @@ public class AuthorizationController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
-    private readonly IMemoryCache _cache;
+    private readonly IDistributedCache _cache;
 
     public AuthorizationController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         ApplicationDbContext context,
-        IMemoryCache cache)
+        IDistributedCache cache)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -144,7 +145,14 @@ public class AuthorizationController : Controller
 
                 // Lấy quyền từ Cache hoặc DB (cache hit = không tốn thêm DB round-trip)
                 var cacheKey = $"permissions_{tenant.Id}_{roleName}";
-                if (!_cache.TryGetValue<List<string>>(cacheKey, out var rolePermissions))
+                var cachedPermissions = await _cache.GetStringAsync(cacheKey);
+                List<string>? rolePermissions = null;
+
+                if (!string.IsNullOrEmpty(cachedPermissions))
+                {
+                    rolePermissions = JsonSerializer.Deserialize<List<string>>(cachedPermissions);
+                }
+                else
                 {
                     rolePermissions = await (from r in scopedContext.Roles.IgnoreQueryFilters()
                                              join rc in scopedContext.RoleClaims on r.Id equals rc.RoleId
@@ -153,7 +161,11 @@ public class AuthorizationController : Controller
                                                 && rc.ClaimType == "Permission"
                                              select rc.ClaimValue).ToListAsync();
 
-                    _cache.Set(cacheKey, rolePermissions, TimeSpan.FromHours(1));
+                    var cacheOptions = new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                    };
+                    await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(rolePermissions), cacheOptions);
                 }
 
                 if (rolePermissions != null)
