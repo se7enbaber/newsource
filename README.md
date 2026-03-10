@@ -4,7 +4,7 @@
 
 ## 🏗 Tổng quan Kiến trúc
 
-Tài liệu chi tiết về kiến trúc hệ thống và luồng dữ liệu xem tại: [Readme_Project.md](./Markdown/Readme_Project.md)
+Tài liệu chi tiết về kiến trúc hệ thống và luồng dữ liệu xem tại: [CONTEXT.md](.agent/CONTEXT.md) và danh mục đặc tả tại [INDEX.md](.agent/specs/INDEX.md)
 
 ---
 
@@ -29,4 +29,4 @@ Tài liệu chi tiết về kiến trúc hệ thống và luồng dữ liệu xe
    docker compose up -d --build
    ```
 
-Xem chi tiết hướng dẫn cài đặt và vận hành tại [README_Project.md](./Markdown/Readme_Project.md).
+Xem chi tiết kiến trúc tổng quan tại [CONTEXT.md](.agent/CONTEXT.md) và các đặc tả tại [.agent/specs/INDEX.md](.agent/specs/INDEX.md).

@@ -19,7 +19,8 @@ RUN dotnet publish "Gateway.csproj" -c Release -o /app/publish /p:UseAppHost=fal
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Create non-root user for security
+# Install curl for healthcheck and create non-root user
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 RUN groupadd -r dotnetapp && useradd -r -g dotnetapp dotnetapp
 
 COPY --from=publish /app/publish .

@@ -28,12 +28,12 @@ export default function AppHeader() {
                     </Button>
                 )}
             </div>
-            
+
             <div className="max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
                 {notifications.length === 0 ? (
-                    <Empty 
-                        image={Empty.PRESENTED_IMAGE_SIMPLE} 
-                        description={<span className="text-gray-400 text-xs">{t('no_notifications')}</span>} 
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={<span className="text-gray-400 text-xs">{t('no_notifications')}</span>}
                         className="py-10"
                     />
                 ) : (
@@ -59,7 +59,7 @@ export default function AppHeader() {
                     </div>
                 )}
             </div>
-            
+
             <div className="mt-4 pt-3 border-t border-gray-100 text-center">
                 <Button type="text" size="small" className="text-[11px] font-bold text-slate-400 hover:text-slate-600">
                     {t('view_all_notifications')}
@@ -72,11 +72,11 @@ export default function AppHeader() {
         <header className="px-4 py-4 flex items-center justify-between bg-transparent flex-none">
             {/* Left: Tenant Info */}
             <div className="flex items-center gap-4">
-                <Popover 
-                    content={notificationContent} 
-                    title={null} 
-                    trigger="click" 
-                    placement="bottomLeft" 
+                <Popover
+                    content={notificationContent}
+                    title={null}
+                    trigger="click"
+                    placement="bottomLeft"
                     arrow={false}
                     onOpenChange={(visible) => visible && resetUnreadCount()}
                     overlayClassName="notification-popover"
@@ -87,10 +87,6 @@ export default function AppHeader() {
                         </Badge>
                     </div>
                 </Popover>
-                <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">{tenantCode || 'HOST'}</div>
-                    <div className="text-[15px] font-black text-[#1e293b]">{tenantName || 'Standard Tenant'}</div>
-                </div>
             </div>
 
             {/* Right side is now empty as requested */}

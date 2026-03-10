@@ -9,27 +9,29 @@ import LanguageDetector from 'i18next-browser-languagedetector';
  * Quy tắc: Các file kết thúc bằng vi.json sẽ gộp vào tiếng Việt, 
  *          Các file kết thúc bằng en.json sẽ gộp vào tiếng Anh.
  */
-const resources: any = {};
+// Import thủ công các file locale vì require.context có thể không hoạt động ổn định trong Next.js App Router (đặc biệt khi dev/build)
+import vi from '../locales/vi.json';
+import en from '../locales/en.json';
+import jp from '../locales/jp.json';
+import zh from '../locales/zh.json';
+import kr from '../locales/kr.json';
+import fr from '../locales/fr.json';
 
-try {
-    // @ts-ignore: require.context là tính năng của Webpack hỗ trợ quét file động
-    const localesContext = require.context('../locales', false, /\.json$/);
-    
-    localesContext.keys().forEach((fileName: string) => {
-        const content = localesContext(fileName);
-        // Lấy mã ngôn ngữ từ cuối tên file: [prefix]_[lang].json hoặc [lang].json
-        const match = fileName.match(/([a-z]{2})\.json$/);
-        if (match) {
-            const langCode = match[1];
-            if (!resources[langCode]) {
-                resources[langCode] = { translation: {} };
-            }
-            Object.assign(resources[langCode].translation, content);
-        }
-    });
-} catch (error) {
-    console.warn('I18n: Không thể tự động quét thư mục locales.', error);
-}
+import tourVi from '../locales/tour_vi.json';
+import tourEn from '../locales/tour_en.json';
+import tourJp from '../locales/tour_jp.json';
+import tourZh from '../locales/tour_zh.json';
+import tourKr from '../locales/tour_kr.json';
+import tourFr from '../locales/tour_fr.json';
+
+const resources: any = {
+    vi: { translation: { ...vi, ...tourVi } },
+    en: { translation: { ...en, ...tourEn } },
+    jp: { translation: { ...jp, ...tourJp } },
+    zh: { translation: { ...zh, ...tourZh } },
+    kr: { translation: { ...kr, ...tourKr } },
+    fr: { translation: { ...fr, ...tourFr } },
+};
 
 // Đảm bảo các ngôn ngữ mặc định luôn tồn tại
 if (!resources.vi) resources.vi = { translation: {} };

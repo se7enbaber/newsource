@@ -60,12 +60,12 @@ export default function JobLogsPage() {
 
     const columns = [
         {
-            title: 'Job Name',
+            title: t('job_name', 'Job Name'),
             dataIndex: 'jobName',
             key: 'jobName',
         },
         {
-            title: 'Status',
+            title: t('job_status', 'Status'),
             dataIndex: 'status',
             key: 'status',
             render: (status: string) => {
@@ -77,18 +77,18 @@ export default function JobLogsPage() {
             }
         },
         {
-            title: 'Message',
+            title: t('message', 'Message'),
             dataIndex: 'message',
             key: 'message',
         },
         {
-            title: 'Started At',
+            title: t('started_at', 'Started At'),
             dataIndex: 'startedAt',
             key: 'startedAt',
             render: (date: string) => date ? new Date(date).toLocaleString() : '-',
         },
         {
-            title: 'Completed At',
+            title: t('completed_at', 'Completed At'),
             dataIndex: 'completedAt',
             key: 'completedAt',
             render: (date: string) => date ? new Date(date).toLocaleString() : '-',
@@ -100,7 +100,7 @@ export default function JobLogsPage() {
             <Card>
                 <AppToolbar
                     showSearch={false}
-                    leftActions={<Title level={4} style={{ margin: 0 }}>Lịch sử Jobs (Hangfire)</Title>}
+                    leftActions={<Title level={4} style={{ margin: 0 }}>{t('job_history_title', 'Lịch sử Jobs (Hangfire)')}</Title>}
                     extraActions={
                         <Space>
                             <DatePicker.RangePicker 

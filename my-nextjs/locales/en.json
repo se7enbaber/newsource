@@ -140,5 +140,18 @@
     "upload_avatar": "Upload Avatar",
     "avatar_hint": "Avatar helps to identify users easily",
     "msg_upload_only_image": "Only image files are allowed!",
-    "msg_upload_size_limit": "Image size must not exceed 2MB!"
+    "msg_upload_size_limit": "Image size must not exceed 2MB!",
+    "no": "No.",
+    "yes": "Yes",
+    "no_data": "No Data",
+    "start_by_adding_new": "Start by adding new →",
+    "per_page": "/ page",
+    "total_records": "Total {{total}} records",
+    "job_name": "Job Name",
+    "job_status": "Status",
+    "message": "Message",
+    "started_at": "Started At",
+    "completed_at": "Completed At",
+    "job_history_title": "Job History (Hangfire)",
+    "last_migrated_at": "Last Migrated At"
 }

@@ -6,6 +6,7 @@ import { AppStatCards, AppStatCardsItem } from './AppStatCards';
 import { AppButton, AppButtonProps } from './AppButton';
 import { useContrastColor } from '@/hooks/useContrastColor';
 import { SettingOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const { useToken } = theme;
 
@@ -80,6 +81,7 @@ export const AppGrid = <T extends AnyObject>({
     onEmptyClick,
     ...props
 }: AppGridProps<T>) => {
+    const { t } = useTranslation();
     const { token } = useToken();
     const { getTextColor } = useContrastColor();
     const [hoveredRowKey, setHoveredRowKey] = useState<React.Key | null>(null);
@@ -115,7 +117,7 @@ export const AppGrid = <T extends AnyObject>({
         // Thêm cột STT vào đầu
         if (showNo) {
             const noColumn = {
-                title: 'No.',
+                title: t('no', 'No.'),
                 key: 'app-grid-no',
                 width: 60,
                 align: 'center' as const,
@@ -177,8 +179,8 @@ export const AppGrid = <T extends AnyObject>({
                                                     onClick(record);
                                                 }}
                                                 onCancel={(e) => e?.stopPropagation()}
-                                                okText="Có"
-                                                cancelText="Hủy"
+                                                okText={t('yes', 'Có')}
+                                                cancelText={t('cancel', 'Hủy')}
                                             >
                                                 <div onClick={(e) => e.stopPropagation()}>{wrappedButton}</div>
                                             </Popconfirm>
@@ -307,7 +309,7 @@ export const AppGrid = <T extends AnyObject>({
                                         style={{
                                             ...headerProps.style,
                                             backgroundColor: token.colorPrimaryBg,
-                                            color: token.colorTextSecondary,
+                                            color: token.colorPrimary,
                                             fontWeight: 600,
                                             textTransform: 'uppercase',
                                             fontSize: '11px',
@@ -338,7 +340,7 @@ export const AppGrid = <T extends AnyObject>({
                                     image={Empty.PRESENTED_IMAGE_SIMPLE} 
                                     description={
                                         <Space orientation="vertical" size={12}>
-                                            <span style={{ color: token.colorTextDescription }}>Chưa có dữ liệu</span>
+                                            <span style={{ color: token.colorTextDescription }}>{t('no_data', 'Chưa có dữ liệu')}</span>
                                             {onEmptyClick && (
                                                 <AppButton 
                                                     size="small" 
@@ -346,7 +348,7 @@ export const AppGrid = <T extends AnyObject>({
                                                     onClick={onEmptyClick}
                                                     variant="secondary"
                                                 >
-                                                    Bắt đầu bằng cách thêm mới →
+                                                    {t('start_by_adding_new', 'Bắt đầu bằng cách thêm mới →')}
                                                 </AppButton>
                                             )}
                                         </Space>
@@ -356,8 +358,8 @@ export const AppGrid = <T extends AnyObject>({
                         }}
                         pagination={pagination !== false ? {
                             showSizeChanger: true,
-                            locale: { items_per_page: '/ trang' },
-                            showTotal: (total: number) => `Tổng cộng ${total} bản ghi`,
+                            locale: { items_per_page: t('per_page', '/ trang') },
+                            showTotal: (total: number) => t('total_records', { total, defaultValue: `Tổng cộng ${total} bản ghi` }),
                             ...pagination
                         } : false}
                         style={{
@@ -380,11 +382,12 @@ export const AppGrid = <T extends AnyObject>({
 
                 .mint-erp-table .ant-table-thead > tr > th {
                     background-color: ${token.colorPrimaryBg} !important;
+                    color: ${token.colorPrimary} !important;
                 }
                 
                 .mint-erp-table .ant-table-row:hover > td {
                     background-color: ${token.colorPrimaryBg} !important;
-                    color: ${token.colorText} !important;
+                    color: ${token.colorPrimary} !important;
                 }
                 
                 .mint-erp-table .ant-table-pagination {

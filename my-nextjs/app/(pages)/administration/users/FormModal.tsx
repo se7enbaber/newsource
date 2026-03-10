@@ -351,7 +351,7 @@ export function FormModal({ open, editingUser, onSuccess, onClose }: FormModalPr
                 try {
                     const res = await api.upload(`/files/avatars/upload`, formData, tenantCode || 'host');
                     if (res && res.success) {
-                        avatarUrl = `/api/proxy/files/avatars/${res.fileName}/view`;
+                        avatarUrl = `/api/proxy/files/avatars/${res.fileName}/view?tenantId=${tenantCode || 'host'}`;
                         message.success(t('msg_upload_success'));
                     } else {
                         throw new Error(res?.errorMessage || t('msg_upload_fail'));

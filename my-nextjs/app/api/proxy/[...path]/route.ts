@@ -21,6 +21,8 @@ async function handler(
     const backendBaseUrl = (process.env.BACKEND_URL || 'http://localhost:5002').replace(/\/$/, '');
     const targetUrl = `${backendBaseUrl}/${path}${searchParams ? '?' + searchParams : ''}`;
 
+    console.log(`[Proxy] ${request.method} ${request.url} -> ${targetUrl}`);
+
     try {
         const fetchOptions: RequestInit = {
             method: request.method,

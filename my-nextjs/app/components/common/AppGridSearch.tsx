@@ -17,7 +17,7 @@ export const useAppGridSearch = () => {
 
     const getColumnSearchProps = <T,>(dataIndex: keyof T, label: string): ColumnType<T> => ({
         title: (
-            <span className="text-white font-semibold">{label}</span>
+            <span>{label}</span>
         ),
         filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
             <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
@@ -52,7 +52,7 @@ export const useAppGridSearch = () => {
             </div>
         ),
         filterIcon: (filtered: boolean) => (
-            <FilterOutlined style={{ color: filtered ? '#fff' : 'rgba(255, 255, 255, 0.7)', fontSize: '14px' }} />
+            <FilterOutlined style={{ color: filtered ? primaryColor : 'inherit', fontSize: '14px', opacity: filtered ? 1 : 0.4 }} />
         ),
         onFilter: (value, record) => {
             const recordValue = record[dataIndex];

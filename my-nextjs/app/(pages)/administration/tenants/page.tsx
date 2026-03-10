@@ -284,7 +284,7 @@ export default function TenantsPage() {
             )
         },
         {
-            title: 'Ngày chạy Update DB',
+            title: t('last_migrated_at', 'Ngày chạy Update DB'),
             dataIndex: 'lastMigratedAt',
             key: 'lastMigratedAt',
             width: 170,

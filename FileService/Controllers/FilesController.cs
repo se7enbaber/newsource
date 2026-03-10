@@ -89,11 +89,14 @@ public class FilesController : ControllerBase
     [HttpGet("{folder}/{fileName}/view")]
     public async Task<IActionResult> View(
         string folder, string fileName,
-        [FromHeader(Name = "X-Tenant-Id")] string tenantId,
+        [FromQuery] string? tenantId,
         CancellationToken ct = default)
     {
+        tenantId ??= Request.Headers["X-Tenant-Id"].ToString();
         if (string.IsNullOrWhiteSpace(tenantId))
-            return BadRequest(new { message = "Header X-Tenant-Id là bắt buộc" });
+        {
+            tenantId = "host"; // Fallback mạc định cho các request image/view cũ không có header/query
+        }
 
         var stream = await _storage.DownloadAsync(tenantId, folder, fileName, ct);
         if (stream == null) return NotFound();

@@ -46,7 +46,7 @@ const Navbar: React.FC = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { t } = useTranslation();
-    const { hasPermission, userName, isHostTenant } = usePermission();
+    const { hasPermission, userName, isHostTenant, tenantName, tenantCode, tenantLogo } = usePermission();
     const { primaryColor } = useTheme();
     const { token } = theme.useToken();
     const { modal, message } = App.useApp();
@@ -68,7 +68,7 @@ const Navbar: React.FC = () => {
             {
                 key: '/',
                 icon: <HomeOutlined style={{ fontSize: 18 }} />,
-                label: t('dashboard', 'Trang chủ'),
+                label: t('menu_dashboard', 'Trang chủ'),
             },
             {
                 key: 'divider-1',
@@ -78,31 +78,31 @@ const Navbar: React.FC = () => {
             {
                 key: '/administration',
                 icon: <SettingOutlined style={{ fontSize: 18 }} />,
-                label: t('system_management', 'Quản trị hệ thống'),
+                label: t('menu_administrator', 'Quản trị hệ thống'),
                 children: [
                     {
                         key: '/administration/users',
                         icon: <UserOutlined style={{ fontSize: 16 }} />,
-                        label: t('user_management', 'Quản lý người dùng'),
+                        label: t('menu_users', 'Quản lý người dùng'),
                         permission: 'AdministrationService.Users.View'
                     },
                     {
                         key: '/administration/roles',
                         icon: <TeamOutlined style={{ fontSize: 16 }} />,
-                        label: t('role_management', 'Quản lý vai trò'),
+                        label: t('menu_roles', 'Quản lý vai trò'),
                         permission: 'AdministrationService.Roles.View'
                     },
                     {
                         key: '/administration/tenants',
                         icon: <GlobalOutlined style={{ fontSize: 16 }} />,
-                        label: t('tenant_management', 'Quản lý khách hàng'),
+                        label: t('menu_tenants', 'Quản lý khách hàng'),
                         permission: 'AdministrationService.Tenants.View',
                         hostOnly: true
                     },
                     {
                         key: '/administration/audit-logs',
                         icon: <HistoryOutlined style={{ fontSize: 16 }} />,
-                        label: t('audit_logs', 'Lịch sử Jobs'),
+                        label: t('menu_job_logs', 'Lịch sử Jobs'),
                     },
                 ],
             },
@@ -114,12 +114,12 @@ const Navbar: React.FC = () => {
             {
                 key: '/master-data',
                 icon: <DatabaseOutlined style={{ fontSize: 18 }} />,
-                label: t('master_data', 'Quản lý dữ liệu chủ'),
+                label: t('menu_mdm', 'Quản lý dữ liệu chủ'),
                 children: [
                     {
                         key: '/master-data/products',
                         icon: <ProjectOutlined style={{ fontSize: 16 }} />,
-                        label: t('product_management', 'Quản lý sản phẩm'),
+                        label: t('menu_products', 'Sản phẩm'),
                     },
                 ],
             },
@@ -259,15 +259,26 @@ const Navbar: React.FC = () => {
             <div className="shrink-0 p-5">
                 <div className="flex items-center gap-3 cursor-pointer group" onClick={() => router.push('/')}>
                     <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 text-white text-xl backdrop-blur-md transition-transform group-hover:scale-105 shadow-inner"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 text-white text-xl backdrop-blur-md transition-transform group-hover:scale-105 shadow-inner overflow-hidden shrink-0"
                     >
-                        <PictureOutlined />
+                        {tenantLogo ? (
+                            <img src={tenantLogo} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                            <PictureOutlined />
+                        )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-white text-[17px] leading-none tracking-tight">Mint ERP</span>
-                        <span className="flex-none bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[4px] tracking-widest leading-none shadow-sm">
-                            PREMIUM
+                    <div className="flex flex-col justify-center gap-1 overflow-hidden" style={{ minWidth: 0 }}>
+                        <span className="font-extrabold text-white text-[16px] leading-tight tracking-tight truncate w-full" title={tenantName || 'Mint ERP'}>
+                            {tenantName || 'Mint ERP'}
                         </span>
+                        <div className="flex">
+                            <span 
+                                className="flex-none rounded-[4px] tracking-widest leading-none shadow-sm truncate uppercase border border-white/20 bg-white/10 transition-colors text-white/90 text-[9px] font-bold px-1.5 py-[3px]" 
+                                title={tenantCode ? `${t('tenant', 'Khách hàng')}: ${tenantCode}` : 'PREMIUM'}
+                            >
+                                {tenantCode || 'PREMIUM'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

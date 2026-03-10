@@ -218,7 +218,7 @@ export function FormModal({ open, editingTenant, onSuccess, onClose }: FormModal
                 try {
                     const res = await api.upload(`/files/logos/upload`, formData, editingTenant?.id || 'host');
                     if (res && res.success) {
-                        logoUrl = `/api/proxy/files/logos/${res.fileName}/view`;
+                        logoUrl = `/api/proxy/files/logos/${res.fileName}/view?tenantId=${editingTenant?.id || 'host'}`;
                         message.success(t('msg_upload_success'));
                     } else {
                         throw new Error(res?.errorMessage || t('msg_upload_fail'));

@@ -143,5 +143,18 @@
     "upload_avatar": "Tải ảnh lên",
     "avatar_hint": "Ảnh đại diện giúp hệ thống dễ dàng nhận diện người dùng",
     "msg_upload_only_image": "Chỉ được phép tải lên tệp hình ảnh!",
-    "msg_upload_size_limit": "Kích thước ảnh không được vượt quá 2MB!"
+    "msg_upload_size_limit": "Kích thước ảnh không được vượt quá 2MB!",
+    "no": "Số.",
+    "yes": "Có",
+    "no_data": "Chưa có dữ liệu",
+    "start_by_adding_new": "Bắt đầu bằng cách thêm mới →",
+    "per_page": "/ trang",
+    "total_records": "Tổng cộng {{total}} bản ghi",
+    "job_name": "Tên Job",
+    "job_status": "Trạng thái",
+    "message": "Thông báo",
+    "started_at": "Bắt đầu lúc",
+    "completed_at": "Hoàn thành lúc",
+    "job_history_title": "Lịch sử Jobs (Hangfire)",
+    "last_migrated_at": "Ngày chạy Update DB"
 }
