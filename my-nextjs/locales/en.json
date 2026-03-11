@@ -153,5 +153,19 @@
     "started_at": "Started At",
     "completed_at": "Completed At",
     "job_history_title": "Job History (Hangfire)",
-    "last_migrated_at": "Last Migrated At"
+    "last_migrated_at": "Last Migrated At",
+    "system_configuration": "System Configuration",
+    "tab_system": "System",
+    "api_protection_title": "System Protection (Anti-Spam / DDoS)",
+    "api_protection_hint": "Note: You are directly tuning the YARP Gateway. The metrics below define the maximum number of requests a user's IP is allowed to push into the system. Upon successful save, parameters will be stored in Redis and activated immediately at Gateway.",
+    "global_limit_label": "Global API Limit (Requests / 10 seconds)",
+    "global_limit_tooltip": "Limits the maximum number of requests per 10 seconds for the entire API system",
+    "global_limit_hint": "Recommended Global Limit is between 100 - 300 depending on user scale.",
+    "auth_limit_label": "Auth Channel Limit /connect (Requests / 30 seconds)",
+    "auth_limit_tooltip": "Tighten Anti Brute-force Login. Only allow a few consecutive login attempts every 30s.",
+    "auth_limit_hint": "In practice, users forgetting passwords / spamming logins should not exceed 5 times/30 seconds.",
+    "msg_rate_limit_updated": "Rate limit configuration updated! Gateway will automatically apply the new parameters.",
+    "error_load_rate_limit": "Failed to load Rate Limit configuration",
+    "error_save_config": "Error occurred while saving configuration",
+    "menu_system_config": "System Configuration"
 }

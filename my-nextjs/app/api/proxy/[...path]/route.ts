@@ -18,6 +18,9 @@ async function handler(
         }
     });
 
+    const ip = request.headers.get('x-forwarded-for') || (request as any).ip || '127.0.0.1';
+    headers.set('X-Forwarded-For', ip);
+
     const backendBaseUrl = (process.env.BACKEND_URL || 'http://localhost:5002').replace(/\/$/, '');
     const targetUrl = `${backendBaseUrl}/${path}${searchParams ? '?' + searchParams : ''}`;
 

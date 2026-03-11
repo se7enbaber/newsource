@@ -8,39 +8,77 @@ using ShareService.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
+using Gateway.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render.com yêu cầu listen trên biến PORT; fallback 8080 cho Docker local
+builder.WebHost.UseUrls("http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
+
 builder.Host.AddCommonSerilog();
 
-// Bổ sung CORS
+// Redis cache
+builder.Services.AddMemoryCache();
+var redisHost = builder.Configuration["Redis:Host"] ?? "redis";
+var redisPort = builder.Configuration.GetValue<int>("Redis:Port", 6379);
+var redisPassword = builder.Configuration["Redis:Password"] ?? "redis123";
+
+try
+{
+    var redisOptions = new ConfigurationOptions
+    {
+        EndPoints = { $"{redisHost}:{redisPort}" },
+        Password = redisPassword,
+        AllowAdmin = false,
+        ConnectTimeout = 3000,
+        SyncTimeout = 3000,
+        AbortOnConnectFail = false
+    };
+
+    var connection = ConnectionMultiplexer.Connect(redisOptions);
+    if (connection.IsConnected)
+    {
+        builder.Services.AddSingleton<IConnectionMultiplexer>(connection);
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false";
+        });
+        Log.Information("✓ Gateway Redis cache configured at {RedisHost}:{RedisPort}", redisHost, redisPort);
+    }
+}
+catch (Exception ex)
+{
+    Log.Warning(ex, "⚠ Gateway Redis connection failed, will use MemoryCache as fallback.");
+}
+
+// CORS
 builder.Services.AddCommonCors("SignalRPolicy", new[] { "http://localhost:3000" });
 
-// ... (phần auth và proxy giữ nguyên)
+// Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Để linh hoạt, có thể config Jwt Authority từ appsettings 
         options.Authority = builder.Configuration["JwtSettings:Authority"];
-        options.RequireHttpsMetadata = false; // Phục vụ dev local bằng chứng chỉ tự ký
+        options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidateAudience = false, // Hoặc theo cấu hình của OpenIddict
+            ValidateAudience = false,
             ValidIssuer = builder.Configuration["ASPNETCORE_ISSUER_URI"],
             ValidateIssuer = !string.IsNullOrEmpty(builder.Configuration["ASPNETCORE_ISSUER_URI"])
         };
     });
 
-// Đăng ký YARP Reverse Proxy
+// YARP Reverse Proxy
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .ConfigureHttpClient((context, handler) =>
     {
-        // Bypass lỗi chứng chỉ tự ký (Self-signed SSL error) 
-        // Trong môi trường Docker hoặc Dev, các service gọi nhau qua local/container name
         handler.SslOptions.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
     });
 
+// Health Checks
 builder.Services.AddCommonHealthChecks("Gateway")
     .AddUrlGroup(
         uri: new Uri("http://admin-service:8080/health/live"),
@@ -51,36 +89,23 @@ builder.Services.AddCommonHealthChecks("Gateway")
         name: "signalr-service",
         tags: new[] { "downstream", "ready" });
 
-/*
-builder.Services.AddHealthChecksUI(options =>
-{
-    options.SetEvaluationTimeInSeconds(30);
-    options.MaximumHistoryEntriesPerEndpoint(50);
-    options.AddHealthCheckEndpoint("Gateway", "/health");
-    options.AddHealthCheckEndpoint("Admin Service", "http://admin-service:8080/health");
-    options.AddHealthCheckEndpoint("SignalR Service", "http://signalr:8080/health");
-})
-.AddInMemoryStorage();
-*/
+// Add Rate Limiter logic built in Extensions
+builder.Services.AddDynamicRateLimiter();
 
 var app = builder.Build();
 
+app.UseRouting();
 app.UseCors("SignalRPolicy");
+app.UseRateLimiter();
+app.UseWebSockets();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<LoggingContextMiddleware>();
+
 // Health Check Endpoints
 app.MapCommonHealthChecks();
 
-/*
-app.MapHealthChecksUI(options =>
-{
-    options.UIPath = "/health-ui";
-    options.ApiPath = "/health-ui-api";
-});
-*/
-
-// Map YARP endpoint
+// YARP Reverse Proxy
 app.MapReverseProxy();
 
 app.Run();

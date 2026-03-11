@@ -33,12 +33,13 @@ COPY --from=publish /app/publish .
 RUN chown -R dotnetapp:dotnetapp /app
 
 USER dotnetapp
-EXPOSE 8080
+EXPOSE 10000
 
-ENV ASPNETCORE_URLS=http://+:8080 \
+ENV PORT=10000 \
+    ASPNETCORE_URLS=http://+:10000 \
     ASPNETCORE_ENVIRONMENT=Production
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:10000/health || exit 1
 
 ENTRYPOINT ["dotnet", "AdministrationService.dll"]

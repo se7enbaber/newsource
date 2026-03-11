@@ -156,5 +156,19 @@
     "started_at": "Bắt đầu lúc",
     "completed_at": "Hoàn thành lúc",
     "job_history_title": "Lịch sử Jobs (Hangfire)",
-    "last_migrated_at": "Ngày chạy Update DB"
+    "last_migrated_at": "Ngày chạy Update DB",
+    "system_configuration": "Cấu hình Hệ thống",
+    "tab_system": "Hệ thống",
+    "api_protection_title": "Bảo vệ hệ thống (Chống Spam / DDoS)",
+    "api_protection_hint": "Lưu ý: Bạn đang thực hiện tinh chỉnh trực tiếp lên Cổng giao tiếp YARP. Các chỉ số dưới đây quy định số lượng request tối đa một IP người dùng được phép đẩy vào hệ thống. Khi lưu thành công, thông số sẽ lưu lên Redis và kích hoạt ngay lập tức tại Gateway.",
+    "global_limit_label": "Giới hạn Global API (Requests / 10 giây)",
+    "global_limit_tooltip": "Giới hạn số lượng request tối đa trong mỗi 10 giây của toàn bộ hệ thống API",
+    "global_limit_hint": "Khuyến nghị Global Limit nằm trong khoảng 100 - 300 tuỳ mức độ scale người dùng.",
+    "auth_limit_label": "Giới hạn kênh xác thực /connect (Requests / 30 giây)",
+    "auth_limit_tooltip": "Quy định siết chặt Anti Brute-force Login. Chỉ cho phép các request đăng nhập vài lần liên tiếp mỗi 30s.",
+    "auth_limit_hint": "Thực tế người dùng quên mật khẩu / spam đăng nhập không nên vượt quá 5 lần/30 giây.",
+    "msg_rate_limit_updated": "Đã cập nhật cấu hình Rate limit! Hệ thống Gateway sẽ tự động nhận diện tham số mới.",
+    "error_load_rate_limit": "Không thể tải cấu hình cấu hình Rate Limit",
+    "error_save_config": "Có lỗi xảy ra khi lưu cấu hình",
+    "menu_system_config": "Cấu hình Hệ thống"
 }

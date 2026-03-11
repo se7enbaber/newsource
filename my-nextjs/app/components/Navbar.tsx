@@ -104,6 +104,12 @@ const Navbar: React.FC = () => {
                         icon: <HistoryOutlined style={{ fontSize: 16 }} />,
                         label: t('menu_job_logs', 'Lịch sử Jobs'),
                     },
+                    {
+                        key: '/administration/system-config',
+                        icon: <SettingOutlined style={{ fontSize: 16 }} />,
+                        label: t('menu_system_config', 'Cấu hình Hệ thống'),
+                        hostOnly: true
+                    },
                 ],
             },
             {

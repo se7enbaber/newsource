@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble
 WORKDIR /app
-EXPOSE 5000 5001
-ENV ASPNETCORE_URLS=http://+:5000
+EXPOSE 10000
+ENV PORT=10000 \
+    ASPNETCORE_URLS=http://+:10000 \
+    ASPNETCORE_ENVIRONMENT=Production
 COPY . .
 ENTRYPOINT ["dotnet", "Gateway.dll"]

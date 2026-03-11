@@ -18,9 +18,11 @@ RUN dotnet publish "SignalRService.csproj" -c Release -o /app/publish /p:UseAppH
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-EXPOSE 8080
+EXPOSE 10000
 COPY --from=publish /app/publish .
 
-ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT=10000 \
+    ASPNETCORE_URLS=http://+:10000 \
+    ASPNETCORE_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "SignalRService.dll"]

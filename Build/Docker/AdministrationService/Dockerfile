@@ -24,13 +24,15 @@ RUN dotnet publish "AdministrationService.csproj" -c Release -o /app/publish /p:
 # Bước 2: Final stage (Runtime)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-EXPOSE 8080
+EXPOSE 10000
 
 # Cài đặt các thư viện hệ thống cần thiết (Fix lỗi libgssapi_krb5.so.2) và curl cho health check
 RUN apt-get update && apt-get install -y libgssapi-krb5-2 curl && rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .
 
-ENV ASPNETCORE_URLS=http://+:8080
+ENV PORT=10000 \
+    ASPNETCORE_URLS=http://+:10000 \
+    ASPNETCORE_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "AdministrationService.dll"]

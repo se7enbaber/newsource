@@ -5,6 +5,9 @@ using ShareService.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render.com yêu cầu listen trên biến PORT; fallback 8080 cho Docker local
+builder.WebHost.UseUrls("http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "8080"));
+
 // ── Serilog (giống các service khác) ─────────────────────────
 builder.Host.UseSerilog((context, services, config) =>
 {
