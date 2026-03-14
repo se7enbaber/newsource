@@ -2,6 +2,9 @@ using FileService.Services;
 using Minio;
 using Serilog;
 using ShareService.Storage;
+using ShareService.Extensions;
+using FileService.Infrastructure;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,20 +58,24 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.TypeInfoResolver = AppJsonContext.Default;
+    });
+
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
 }
 
 app.UseCors();
 app.UseSerilogRequestLogging();
+app.MapCommonHealthChecks();
 app.MapControllers();
 
 app.Run();

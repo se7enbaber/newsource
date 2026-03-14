@@ -1,9 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
 using AdministrationService.Repositories.Jobs;
-using ShareService.Infrastructure.Model.Base;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using AdministrationService.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AdministrationService.Controllers
 {

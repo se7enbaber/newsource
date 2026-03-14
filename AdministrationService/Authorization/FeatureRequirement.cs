@@ -1,9 +1,6 @@
-using AdministrationService.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using OpenIddict.Abstractions;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace AdministrationService.Authorization;
 

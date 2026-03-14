@@ -1,5 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+
+using ShareService.Infrastructure.Model.Base;
+using ShareService.Services.Base;
 
 namespace ShareService.Repositories.Base
 {

@@ -1,37 +1,44 @@
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+RUN apk add --no-cache clang build-base zlib-dev musl-dev
+
 WORKDIR /src
 
-# Copy ShareService DLL trước (dependency)
-COPY commondll/ /commondll/
+# Copy project files for restore (ShareService is a ProjectReference)
+COPY ["FileService/FileService.csproj", "FileService/"]
+COPY ["ShareService/ShareService.csproj", "ShareService/"]
 
-# Copy và build FileService
-COPY FileService/ .
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet restore "FileService/FileService.csproj" -r linux-musl-x64
+
+# Copy all source and publish
+COPY . .
+WORKDIR "/src/FileService"
+
+RUN dotnet publish "FileService.csproj" \
+    -c Release \
+    -r linux-musl-x64 \
+    --no-restore \
+    -o /app \
+    /p:PublishAot=true \
+    /p:StripSymbols=true
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
 WORKDIR /app
 
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
-# Non-root user
-RUN groupadd -r dotnetapp && useradd -r -g dotnetapp dotnetapp
+# Copy binary
+COPY --from=build /app/FileService .
 
-COPY --from=build /app/publish .
-RUN chown -R dotnetapp:dotnetapp /app
-
-USER dotnetapp
+USER guest
 EXPOSE 10000
-
 ENV PORT=10000 \
     ASPNETCORE_URLS=http://+:10000 \
-    ASPNETCORE_ENVIRONMENT=Production
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_RUNNING_IN_CONTAINER=true
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:10000/health/live || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:10000/health || exit 1
 
-ENTRYPOINT ["dotnet", "FileService.dll"]
+ENTRYPOINT ["./FileService"]

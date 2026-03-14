@@ -4,10 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Pomelo chưa có bản chính thức cho EF Core 10 (chỉ có 9.0.0).
-         Pomelo 9.0.0 vẫn hoạt động runtime với EF Core 10.
-         Bỏ dòng này khi Pomelo.EntityFrameworkCore.MySql 10.x được phát hành. -->
-    <NoWarn>$(NoWarn);NU1608;NU1902</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,7 +38,6 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.11.8" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.4" />
   </ItemGroup>
 
   <ItemGroup>

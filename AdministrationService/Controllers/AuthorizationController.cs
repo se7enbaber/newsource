@@ -1,4 +1,3 @@
-using ShareService.Services.Base;
 using AdministrationService.Infrastructure.Data;
 using AdministrationService.Infrastructure.Model;
 using Microsoft.AspNetCore;
@@ -7,32 +6,22 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using ShareService.Services.Base;
 using System.Security.Claims;
-using AdministrationService.Authorization;
-using AdministrationService.Services;
-using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
 public class AuthorizationController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly IDistributedCache _cache;
 
     public AuthorizationController(
-        UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
-        RoleManager<ApplicationRole> roleManager,
         ApplicationDbContext context,
         IDistributedCache cache)
     {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _roleManager = roleManager;
         _context = context;
         _cache = cache;
     }

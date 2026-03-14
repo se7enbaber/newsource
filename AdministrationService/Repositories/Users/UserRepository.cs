@@ -1,19 +1,12 @@
-using AdministrationService.Infrastructure.Data;
+ï»¿using AdministrationService.Infrastructure.Data;
 using AdministrationService.Infrastructure.Model;
 using ShareService.Repositories.Base;
 
 namespace AdministrationService.Repositories.Users
 {
-    public interface IUserRepository : IBaseRepository<ApplicationUser>
-    {
-        // Thêm các hàm d?c thù cho User n?u c?n
-    }
+    public interface IUserRepository : IBaseRepository<ApplicationUser> { }
 
-    public class UserRepository : BaseRepository<ApplicationUser>, IUserRepository
-    {
-        public UserRepository(ApplicationDbContext context) : base(context)
-        {
-        }
-    }
+    public class UserRepository(ApplicationDbContext context)
+        : BaseRepository<ApplicationUser>(context), IUserRepository
+    { }
 }
-

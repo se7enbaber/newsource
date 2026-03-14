@@ -43,7 +43,7 @@ namespace AdministrationService.Controllers
         [HasPermission(Permissions.Roles.View)]
         public ActionResult<List<string>> GetAllPermissions()
         {
-            var permissions = AdministrationService.Authorization.Permissions.GetAll();
+            var permissions = Permissions.GetAll();
             return Ok(permissions);
         }
         [HttpPost]

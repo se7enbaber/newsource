@@ -27,6 +27,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
+
 using DelayBackoffType = PollyCore::Polly.DelayBackoffType;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -159,6 +160,7 @@ builder.Services.AddAuthentication(options =>
 // 8. Controllers & API
 builder.Services.AddControllers();
 
+
 // 9. SignalR HTTP Client with Resilience
 builder.Services.AddHttpClient("SignalRService", client =>
 {
@@ -203,10 +205,10 @@ builder.Services.AddHttpClient("SignalRService", client =>
     options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(signalRConfig.GetValue("TimeoutSeconds", 10));
 });
 
-builder.Services.AddScoped<ISignalRService, SignalRService>();
 builder.Services.AddHostedService<DbSeeder>();
 
-builder.Services.AddSwaggerGen();
+// 9. OpenAPI (AOT compatible in .NET 10)
+builder.Services.AddOpenApi();
 builder.Services.AddCommonCors("AllowAll");
 
 // 10. Health Checks
@@ -258,11 +260,10 @@ app.Use(async (context, next) =>
 
 app.MapCommonHealthChecks();
 app.MapControllers();
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Administration API V1");
-});
+    app.MapOpenApi();
+}
 
 app.UseCors("AllowAll");
 

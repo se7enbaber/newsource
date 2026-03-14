@@ -42,6 +42,11 @@
 
 ---
 
+> [!NOTE]
+> **Infrastructure Stability**: Hệ thống hiện tại sử dụng **Standard .NET Runtime** (Không dùng Native AOT) để đảm bảo khả năng tương thích tối đa với EF Core Reflection (Global Query Filters), Hangfire, và các thư viện Identity. Docker images sử dụng `aspnet:10.0` (Ubuntu/Alpine) kèm các thư viện hệ thống cần thiết như `libgssapi-krb5-2`.
+
+---
+
 ## 🔁 Các luồng dữ liệu chính thực tế (Data Flows)
 
 ### 1. Luồng Request Cơ Bản từ Trình Duyệt:

@@ -1,5 +1,4 @@
 using AdministrationService.Authorization;
-using AdministrationService.Infrastructure.Model;
 using AdministrationService.Infrastructure.Model.DTOs;
 using AdministrationService.Services;
 using Microsoft.AspNetCore.Authorization;

@@ -1,39 +1,38 @@
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
-# Restore dependencies (optimized for layer caching)
+# Copy project files for restore
 COPY ["GatewayService/Gateway/Gateway.csproj", "GatewayService/Gateway/"]
+COPY ["ShareService/ShareService.csproj", "ShareService/"]
 RUN dotnet restore "GatewayService/Gateway/Gateway.csproj"
 
-# Copy source and build
+# Copy all source
 COPY . .
-WORKDIR /src/GatewayService/Gateway
-RUN dotnet build "Gateway.csproj" -c Release -o /app/build
+WORKDIR "/src/GatewayService/Gateway"
 
-# Stage 2: Publish
-FROM build AS publish
-RUN dotnet publish "Gateway.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Publish (Non-AOT)
+RUN dotnet publish "Gateway.csproj" \
+    -c Release \
+    -o /app \
+    --no-restore
 
-# Stage 3: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 WORKDIR /app
 
-# Install curl for healthcheck and create non-root user
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-RUN groupadd -r dotnetapp && useradd -r -g dotnetapp dotnetapp
+RUN apk add --no-cache curl
 
-COPY --from=publish /app/publish .
-RUN chown -R dotnetapp:dotnetapp /app
+COPY --from=build /app .
 
-USER dotnetapp
-EXPOSE 10000
+USER guest
+EXPOSE 8080
+ENV PORT=8080 \
+    ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_RUNNING_IN_CONTAINER=true
 
-ENV PORT=10000 \
-    ASPNETCORE_URLS=http://+:10000 \
-    ASPNETCORE_ENVIRONMENT=Production
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:10000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Gateway.dll"]

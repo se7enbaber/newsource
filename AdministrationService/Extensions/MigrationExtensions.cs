@@ -1,9 +1,8 @@
-using ShareService.Services.Base;
 using AdministrationService.Infrastructure.Data;
 using AdministrationService.Infrastructure.Model;
 using AdministrationService.Services;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ShareService.Services.Base;
 
 namespace AdministrationService.Extensions
 {
@@ -19,6 +18,7 @@ namespace AdministrationService.Extensions
                 var context = services.GetRequiredService<ApplicationDbContext>();
                 var logger = services.GetRequiredService<ILogger<Program>>();
 
+                
                 var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
                 if (pendingMigrations.Any())
                 {
@@ -33,7 +33,7 @@ namespace AdministrationService.Extensions
                 {
                     logger.LogInformation("--> Database đã ở phiên bản mới nhất. Không có thay đổi nào được áp dụng.");
                 }
-
+                
                 // 3. Tự động Migration cho toàn bộ Tenant có cơ sở dữ liệu riêng (isolated)
                 var tenants = await context.Tenants
                     .IgnoreQueryFilters()

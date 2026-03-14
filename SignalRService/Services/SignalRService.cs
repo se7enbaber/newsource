@@ -1,5 +1,7 @@
-using SignalRService.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using SignalRService.Infrastructure;
+using SignalRService.Hubs;
+
 
 namespace SignalRService.Services
 {
@@ -21,7 +23,7 @@ namespace SignalRService.Services
         public async Task SendNotificationAsync(Guid? tenantId, string title, string message, string type = "info")
         {
             var finalType = string.IsNullOrEmpty(type) ? "info" : type.ToLower();
-            var data = new { title, message, type = finalType };
+            var data = new NotificationDto(title, message, finalType);
 
             if (tenantId.HasValue)
             {
@@ -34,9 +36,10 @@ namespace SignalRService.Services
             }
         }
 
+
         public async Task SendJobStatusAsync(Guid? tenantId, string jobId, string status, string message)
         {
-            var data = new { jobId, status, message, timestamp = DateTime.UtcNow };
+            var data = new JobStatusDto(jobId, status, message, DateTime.UtcNow);
             if (tenantId.HasValue)
             {
                 var groupName = tenantId.Value.ToString().ToLower();
@@ -47,5 +50,6 @@ namespace SignalRService.Services
                 await _hubContext.Clients.All.SendAsync("ReceiveJobStatus", data);
             }
         }
+
     }
 }

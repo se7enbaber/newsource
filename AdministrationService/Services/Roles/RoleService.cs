@@ -1,6 +1,6 @@
-using AdministrationService.Infrastructure.Model;
+Ôªøusing AdministrationService.Infrastructure.Model;
 using AdministrationService.Infrastructure.Model.DTOs;
-using AdministrationService.Repositories.Users;
+using AdministrationService.Repositories.Roles;
 using ShareService.Services.Base;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +12,7 @@ namespace AdministrationService.Services
     public interface IRoleService : IBaseService<ApplicationRole, RoleDto, CreateRoleDto>
     {
         Task<PagedResult<RoleDto>> GetPagedRolesAsync(PaginationParams @params);
-        // L?y danh s·ch Role d? hi?n th? trong dropdown
+        // L?y danh s√°ch Role d? hi?n th? trong dropdown
         Task<List<RoleDto>> GetRolesForDropdownAsync(); 
     }
 
@@ -21,7 +21,7 @@ namespace AdministrationService.Services
         RoleManager<ApplicationRole> roleManager,
         ITenantService tenantService) : BaseService<ApplicationRole, RoleDto, CreateRoleDto>(repository, tenantService), IRoleService
     {
-        // H‡m n‡y d˘ng l?i logic ph‚n trang c?a Base nhung thÍm b? l?c Search
+        // H√†m n√†y d√πng l?i logic ph√¢n trang c?a Base nhung th√™m b? l?c Search
         public async Task<PagedResult<RoleDto>> GetPagedRolesAsync(PaginationParams @params)
         {
             // 1. T?o di?u ki?n l?c (Predicate)
@@ -31,8 +31,8 @@ namespace AdministrationService.Services
                 filter = r => r.Name!.Contains(@params.SearchTerm);
             }
 
-            // 2. G?i h‡m GetPagedAsync t? BaseRepository (n?u BaseRepo c?a b?n h? tr? predicate)
-            // Ho?c s? d?ng logic ph‚n trang cÛ s?n
+            // 2. G?i h√†m GetPagedAsync t? BaseRepository (n?u BaseRepo c?a b?n h? tr? predicate)
+            // Ho?c s? d?ng logic ph√¢n trang c√≥ s?n
             var (items, total) = await _repository.GetPagedAsync(@params.PageNumber, @params.PageSize, filter);
 
             return new PagedResult<RoleDto>
@@ -56,15 +56,15 @@ namespace AdministrationService.Services
                 IsSystemRole = entity.IsSystemRole
             };
 
-            // L?y danh s·ch Permission t? Role Claims
-            // Luu ˝: Trong th?c t?, b?n cÛ th? th?c hi?n Join tr?c ti?p d? t?i uu performance khi l?y danh s·ch l?n
+            // L?y danh s√°ch Permission t? Role Claims
+            // Luu √Ω: Trong th?c t?, b?n c√≥ th? th?c hi?n Join tr?c ti?p d? t?i uu performance khi l?y danh s√°ch l?n
             var claims = roleManager.GetClaimsAsync(entity).GetAwaiter().GetResult();
             dto.Permissions = claims.Where(c => c.Type == "Permission").Select(c => c.Value).ToList();
 
             return dto;
         }
 
-        // Map t? DTO sang Entity (Identity c?n Name v‡ NormalizedName)
+        // Map t? DTO sang Entity (Identity c?n Name v√† NormalizedName)
         protected override ApplicationRole MapToEntity(CreateRoleDto dto) => new()
         {
             Name = dto.Name,
@@ -75,7 +75,7 @@ namespace AdministrationService.Services
             IsSystemRole = dto.IsSystemRole
         };
 
-        // Override h‡m Update vÏ Role c?n qua RoleManager
+        // Override h√†m Update v√¨ Role c?n qua RoleManager
         public override async Task<bool> UpdateAsync(Guid id, CreateRoleDto dto)
         {
             var role = await roleManager.FindByIdAsync(id.ToString());
@@ -86,8 +86,8 @@ namespace AdministrationService.Services
             role.Description = dto.Description;
             role.IsActive = dto.IsActive;
             
-            // Note: SystemRole thu?ng c?m g? SystemRole n?u nÛ d„ l‡ true, 
-            // tuy nhiÍn tu? nghi?p v? cÛ update c? c? n‡y hay khÙng
+            // Note: SystemRole thu?ng c?m g? SystemRole n?u n√≥ d√£ l√† true, 
+            // tuy nhi√™n tu? nghi?p v? c√≥ update c? c? n√†y hay kh√¥ng
             role.IsSystemRole = dto.IsSystemRole;
 
             var result = await roleManager.UpdateAsync(role);
@@ -95,10 +95,10 @@ namespace AdministrationService.Services
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"KhÙng th? c?p nh?t Role: {errors}");
+                throw new Exception($"Kh√¥ng th? c?p nh?t Role: {errors}");
             }
 
-            // X? l˝ Permissions (RoleClaims)
+            // X? l√Ω Permissions (RoleClaims)
             var existingClaims = await roleManager.GetClaimsAsync(role);
             var permissionClaims = existingClaims.Where(c => c.Type == "Permission");
 
@@ -119,16 +119,16 @@ namespace AdministrationService.Services
         {
             var role = MapToEntity(dto);
 
-            // S? d?ng RoleManager thay vÏ Repository thÙng thu?ng
+            // S? d?ng RoleManager thay v√¨ Repository th√¥ng thu?ng
             var result = await roleManager.CreateAsync(role);
 
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception($"KhÙng th? t?o Role: {errors}");
+                throw new Exception($"Kh√¥ng th? t?o Role: {errors}");
             }
 
-            // ThÍm c·c Quy?n h?n n?u cÛ
+            // Th√™m c√°c Quy?n h?n n?u c√≥
             if (dto.Permissions != null && dto.Permissions.Any())
             {
                 foreach (var permission in dto.Permissions)
@@ -142,7 +142,7 @@ namespace AdministrationService.Services
         // Trong RoleService.cs
         public async Task<List<RoleDto>> GetRolesForDropdownAsync()
         {
-            // Ch? l?y c·c Role dang ho?t d?ng c?a Tenant hi?n t?i
+            // Ch? l?y c√°c Role dang ho?t d?ng c?a Tenant hi?n t?i
             var roles = await _repository.Entities
                 .Where(r => r.IsActive)
                 .ToListAsync();

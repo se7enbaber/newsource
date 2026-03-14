@@ -24,7 +24,7 @@ namespace AdministrationService.Services
         private readonly ITenantDbSeedService _seedService;
         private readonly IServiceProvider _serviceProvider;
         private readonly ITenantService _tenantService;
-        private readonly ISignalRService _signalRService;
+        private readonly ISignalRNotificationService _signalRService;
         private readonly IJobLogRepository _jobLogRepository;
         private readonly ILogger<TenantMigrationJob> _logger;
 
@@ -33,7 +33,7 @@ namespace AdministrationService.Services
             ITenantDbSeedService seedService,
             IServiceProvider serviceProvider,
             ITenantService tenantService,
-            ISignalRService signalRService,
+            ISignalRNotificationService signalRService,
             IJobLogRepository jobLogRepository,
             ILogger<TenantMigrationJob> logger)
         {
@@ -109,10 +109,10 @@ namespace AdministrationService.Services
 
             try
             {
-                // Fake session cho Job đang chạy ngầm bằng cách chủ động set TenantId
+                // Fake session cho Job Ä‘ang cháº¡y ngáº§m báº±ng cÃ¡ch chá»§ Ä‘á»™ng set TenantId
                 _tenantService.TenantId = tenant.Id;
 
-                // Sử dụng ApplicationDbContext với Connection String của Tenant
+                // Sá»­ dá»¥ng ApplicationDbContext vá»›i Connection String cá»§a Tenant
                 using var context = new ApplicationDbContext(optionsBuilder.Options, _tenantService, _serviceProvider);
 
                 _logger.LogInformation("Applying migrations for tenant {TenantName}...", tenant.Name);

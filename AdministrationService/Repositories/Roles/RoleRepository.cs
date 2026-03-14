@@ -1,8 +1,8 @@
-using AdministrationService.Infrastructure.Data;
+﻿using AdministrationService.Infrastructure.Data;
 using AdministrationService.Infrastructure.Model;
 using ShareService.Repositories.Base;
 
-namespace AdministrationService.Repositories.Users
+namespace AdministrationService.Repositories.Roles
 {
     public interface IRoleRepository : IBaseRepository<ApplicationRole> { }
 
@@ -10,4 +10,3 @@ namespace AdministrationService.Repositories.Users
         : BaseRepository<ApplicationRole>(context), IRoleRepository
     { }
 }
-

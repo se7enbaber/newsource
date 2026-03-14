@@ -1,6 +1,4 @@
-using AdministrationService.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using System.Security.Claims;
 
@@ -25,7 +23,7 @@ public class PermissionAuthorizationHandler(ILogger<PermissionAuthorizationHandl
         var roleClaims = allClaims.Where(c =>
             c.Type == "role" ||
             c.Type == OpenIddictConstants.Claims.Role ||
-            c.Type == System.Security.Claims.ClaimTypes.Role
+            c.Type == ClaimTypes.Role
         ).Select(c => c.Value).ToList();
 
         var isAdmin = roleClaims.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase));

@@ -4,6 +4,8 @@ using ShareService.Extensions;
 using Serilog;
 using ShareService.Middleware;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using SignalRService.Infrastructure;
+
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -25,7 +27,12 @@ var redisPassword = builder.Configuration["Redis:Password"] ?? "redis123";
 var redisConnectionString = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false";
 
 signalRBuilder.AddStackExchangeRedis(redisConnectionString);
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.TypeInfoResolver = AppJsonContext.Default;
+    });
+
 builder.Services.AddSingleton<ISignalRService, SignalRService.Services.SignalRService>();
 
 builder.Services.AddCommonHealthChecks("SignalR Service");

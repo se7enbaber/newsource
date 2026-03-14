@@ -1,15 +1,12 @@
-﻿using ShareService.Services.Base;
-using ShareService.Infrastructure.Model.Base;
 using AdministrationService.Extensions;
 using AdministrationService.Infrastructure.Model;
 using AdministrationService.Providers;
-using AdministrationService.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using OpenIddict.EntityFrameworkCore.Models;
+using ShareService.Infrastructure.Model.Base;
+using ShareService.Services.Base;
 
 namespace AdministrationService.Infrastructure.Data
 {
@@ -29,12 +26,13 @@ namespace AdministrationService.Infrastructure.Data
         public DbSet<TenantFeature> TenantFeatures => Set<TenantFeature>();
         public DbSet<JobLog> JobLogs => Set<JobLog>();
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.UseOpenIddict(); // Quan tr?ng: Tích h?p các b?ng OIDC
+            modelBuilder.UseOpenIddict(); // Quan trọng: Tích hợp các bảng OIDC
 
-            // Ð?i tên các b?ng Identity
+            // Đổi tên các bảng Identity
             modelBuilder.Entity<ApplicationUser>().ToTable($"{AppConstants.PrefixTable}Users");
             modelBuilder.Entity<ApplicationRole>().ToTable($"{AppConstants.PrefixTable}Roles");
             modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable($"{AppConstants.PrefixTable}UserRoles");
@@ -43,18 +41,18 @@ namespace AdministrationService.Infrastructure.Data
             modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable($"{AppConstants.PrefixTable}UserTokens");
             modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable($"{AppConstants.PrefixTable}RoleClaims");
 
-            // Ð?i tên b?ng Tenant
+            // Đổi tên bảng Tenant
             modelBuilder.Entity<Tenant>().ToTable($"{AppConstants.PrefixTable}Tenants");
 
-            // Ð?i tên các b?ng OpenIddict (N?u dùng b?n EF chu?n)
+            // Đổi tên các bảng OpenIddict (Nếu dùng bản EF chuẩn)
             modelBuilder.Entity<OpenIddictEntityFrameworkCoreApplication>().ToTable($"{AppConstants.PrefixTable}OidcApplications");
             modelBuilder.Entity<OpenIddictEntityFrameworkCoreAuthorization>().ToTable($"{AppConstants.PrefixTable}OidcAuthorizations");
             modelBuilder.Entity<OpenIddictEntityFrameworkCoreScope>().ToTable($"{AppConstants.PrefixTable}OidcScopes");
             modelBuilder.Entity<OpenIddictEntityFrameworkCoreToken>().ToTable($"{AppConstants.PrefixTable}OidcTokens");
 
-            // T? Ð?NG L?C: B?t k? khi nào query b?ng User, nó s? t? d?ng thêm TenantId
+            // TỰ ĐỘNG LỌC: Mỗi Tenant chỉ thấy User/Role của chính mình, ngoại trừ các bản ghi đã xóa
             modelBuilder.Entity<ApplicationUser>().HasQueryFilter(u => u.TenantId == _tenantService.TenantId && !u.IsDeleted);
-            modelBuilder.Entity<ApplicationRole>().HasQueryFilter(u => u.TenantId == _tenantService.TenantId && !u.IsDeleted);
+            modelBuilder.Entity<ApplicationRole>().HasQueryFilter(r => r.TenantId == _tenantService.TenantId && !r.IsDeleted);
             modelBuilder.Entity<Tenant>().HasQueryFilter(t => !t.IsDeleted);
 
             // C?u hình b?ng TenantFeatures
