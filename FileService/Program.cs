@@ -42,6 +42,7 @@ builder.Services.AddMinio(config =>
 });
 
 // ── Services ──────────────────────────────────────────────────
+builder.Services.AddCommonHealthChecks("FileService");
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 
 // ── CORS — cho phép AdminService và Gateway gọi vào ──────────
