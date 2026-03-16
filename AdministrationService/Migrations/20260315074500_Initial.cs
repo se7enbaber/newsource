@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -7,11 +7,63 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AdministrationService.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "ADMIN_Tenants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Code = table.Column<string>(type: "text", nullable: false),
+                    LogoUrl = table.Column<string>(type: "text", nullable: true),
+                    ConnectionString = table.Column<string>(type: "text", nullable: true),
+                    DbProvider = table.Column<string>(type: "text", nullable: true),
+                    IsMigrated = table.Column<bool>(type: "boolean", nullable: false),
+                    LastMigratedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ADMIN_Tenants", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ADMIN_JobLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    JobId = table.Column<string>(type: "text", nullable: false),
+                    JobName = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ADMIN_JobLogs", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "ADMIN_OidcApplications",
                 columns: table => new
@@ -63,6 +115,9 @@ namespace AdministrationService.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    IsSystemRole = table.Column<bool>(type: "boolean", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedId = table.Column<Guid>(type: "uuid", nullable: true),
@@ -82,30 +137,7 @@ namespace AdministrationService.Migrations
                     table.PrimaryKey("PK_ADMIN_Roles", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "ADMIN_Tenants",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Code = table.Column<string>(type: "text", nullable: false),
-                    ConnectionString = table.Column<string>(type: "text", nullable: true),
-                    DbProvider = table.Column<string>(type: "text", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DeletedBy = table.Column<string>(type: "text", nullable: true),
-                    DeletedId = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedBy = table.Column<string>(type: "text", nullable: true),
-                    CreatedId = table.Column<Guid>(type: "uuid", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
-                    UpdatedId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ADMIN_Tenants", x => x.Id);
-                });
+
 
             migrationBuilder.CreateTable(
                 name: "ADMIN_Users",
@@ -123,6 +155,12 @@ namespace AdministrationService.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UpdatedBy = table.Column<string>(type: "text", nullable: true),
                     UpdatedId = table.Column<Guid>(type: "uuid", nullable: true),
+                    FullName = table.Column<string>(type: "text", nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsEmailVerified = table.Column<bool>(type: "boolean", nullable: false),
+                    AvatarUrl = table.Column<string>(type: "text", nullable: true),
+                    AvatarJsonConfig = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -184,6 +222,24 @@ namespace AdministrationService.Migrations
                         name: "FK_ADMIN_RoleClaims_ADMIN_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "ADMIN_Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ADMIN_TenantFeatures",
+                columns: table => new
+                {
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FeatureCode = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ADMIN_TenantFeatures", x => new { x.TenantId, x.FeatureCode });
+                    table.ForeignKey(
+                        name: "FK_ADMIN_TenantFeatures_ADMIN_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "ADMIN_Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -347,7 +403,7 @@ namespace AdministrationService.Migrations
             migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
                 table: "ADMIN_Roles",
-                column: "NormalizedName",
+                columns: new[] { "NormalizedName", "TenantId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -379,13 +435,16 @@ namespace AdministrationService.Migrations
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "ADMIN_Users",
-                column: "NormalizedUserName",
+                columns: new[] { "NormalizedUserName", "TenantId" },
                 unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ADMIN_JobLogs");
+
             migrationBuilder.DropTable(
                 name: "ADMIN_OidcScopes");
 
@@ -396,7 +455,7 @@ namespace AdministrationService.Migrations
                 name: "ADMIN_RoleClaims");
 
             migrationBuilder.DropTable(
-                name: "ADMIN_Tenants");
+                name: "ADMIN_TenantFeatures");
 
             migrationBuilder.DropTable(
                 name: "ADMIN_UserClaims");
@@ -412,6 +471,9 @@ namespace AdministrationService.Migrations
 
             migrationBuilder.DropTable(
                 name: "ADMIN_OidcAuthorizations");
+
+            migrationBuilder.DropTable(
+                name: "ADMIN_Tenants");
 
             migrationBuilder.DropTable(
                 name: "ADMIN_Roles");

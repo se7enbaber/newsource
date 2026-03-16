@@ -11,12 +11,13 @@ public class DbSeeder(IServiceScopeFactory scopeFactory, IConfiguration configur
     {
         using var scope = scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        // 1. Tạo DB và chạy Migration TRUỚC KHI resolve các service khác có thể truy vấn DB
+        await context.Database.MigrateAsync(ct);
+
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-
-        // 1. Tạo DB và chạy Migration (Dùng MigrateAsync thay vì EnsureCreatedAsync để hỗ trợ OIDC Tables)
-        await context.Database.MigrateAsync(ct);
 
         // 2. Tạo OpenIddict client "swagger" (nếu chưa có)
         if (await manager.FindByClientIdAsync("swagger", ct) == null)

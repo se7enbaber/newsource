@@ -24,9 +24,17 @@ var signalRBuilder = builder.Services.AddSignalR();
 var redisHost = builder.Configuration["Redis:Host"] ?? "redis";
 var redisPort = builder.Configuration.GetValue<int>("Redis:Port", 6379);
 var redisPassword = builder.Configuration["Redis:Password"] ?? "redis123";
-var redisConnectionString = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false";
+var redisConnectionString = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false,allowAdmin=true";
 
-signalRBuilder.AddStackExchangeRedis(redisConnectionString);
+var redisOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+var connection = StackExchange.Redis.ConnectionMultiplexer.Connect(redisOptions);
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(connection);
+builder.Services.AddHttpClient();
+
+signalRBuilder.AddStackExchangeRedis(options => {
+    options.Configuration = redisOptions;
+    options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("SignalR:");
+});
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

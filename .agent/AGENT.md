@@ -17,6 +17,8 @@
 
 | Rule | Chi tiết |
 |------|----------|
+| **GEMINI.md** | **BẮT BUỘC** đọc file `GEMINI.md` ở root project đầu tiên để nắm bắt context và các quy tắc đặc biệt. |
+| **Superpowers Workflow** | **LUÔN LUÔN** đọc `.agent/ANTIGRAVITY_INSTRUCTIONS.md` và tuân thủ quy trình 8 bước (Pre-flight → Brainstorming → Isolation → Plans → Execution → TDD → Review → Finishing). |
 | Đọc README trước | Đọc `README.md` / `README_PROJECT.md` trước khi bắt đầu task |
 | Kế thừa Base Class | Backend service/repo → kế thừa `BaseService<TEntity,TDto,TCreateDto>` và `BaseRepository<T>` từ ShareService |
 | Audit & Soft Delete | Entity phải implement `IAuditEntity`, `IAuditDeleteEntity`, `IMultiTenant` |
@@ -26,6 +28,7 @@
 | Custom UI Component | Grid → `<AppGrid>`, Button → `<AppButton>` từ `app/components/common` |
 | Dọn rác sau task | Xóa file log `.txt`, script tạm sau khi làm xong |
 | ✅ Gen file test | Sau khi hoàn thành bất kỳ tính năng nào — tạo file `.agent/specs/{module}/{feature}.test.spec.md` theo đúng format của skill `erp-testing`. Không được đóng task khi chưa có file test này. |
+| Port Docker cố định | **Quan trọng**: Tuyệt đối không thay đổi port mapping trong `docker-compose.yml` và `.env` khi build hoặc debug. Host Port phải luôn giữ đúng giá trị đã cấu hình để đảm bảo connectivity qua Gateway. |
 
 ---
 
@@ -40,6 +43,7 @@
 | Copy-paste DTO | Không khai báo lại DTO đã có trong ShareService |
 | Khai báo lại Serilog/CORS | Dùng `ShareService.Extensions`, không khai báo lại trên từng microservice |
 | Sửa file ngoài scope | Chỉ sửa file liên quan trực tiếp đến yêu cầu, không lan man sang service khác |
+| Tự ý đổi Port Docker | Không tùy tiện thay đổi `PORT` trong Dockerfile hoặc `ports` trong docker-compose mà không có yêu cầu cụ thể, tránh gây lỗi kết nối/Gateway. |
 
 ---
 

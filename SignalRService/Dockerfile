@@ -15,20 +15,17 @@ WORKDIR "/src/SignalRService"
 
 RUN dotnet publish "SignalRService.csproj" \
     -c Release \
-    -r linux-musl-x64 \
-    --no-restore \
     -o /app \
-    /p:PublishAot=true \
-    /p:StripSymbols=true
+    --no-restore
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-alpine
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 WORKDIR /app
 
 RUN apk add --no-cache curl
 
 # Copy binary
-COPY --from=build /app/SignalRService .
+COPY --from=build /app .
 
 USER guest
 EXPOSE 10000
@@ -40,4 +37,4 @@ ENV PORT=10000 \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:10000/health || exit 1
 
-ENTRYPOINT ["./SignalRService"]
+ENTRYPOINT ["dotnet", "SignalRService.dll"]

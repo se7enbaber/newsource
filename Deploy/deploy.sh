@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")"
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║          DOCKER DEPLOYMENT MANAGER - SELECT OPTION              ║
 # ║                PostgreSQL: Host/123456                           ║
@@ -73,20 +74,20 @@ deploy_complete() {
     echo ""
 
     echo "[1/4] Building images..."
-    docker compose build || { echo "Build failed!"; read; return 1; }
+    docker compose -f ../docker-compose.yml build || { echo "Build failed!"; read; return 1; }
 
     echo ""
     echo "[2/4] Stopping services..."
-    docker compose stop
+    docker compose -f ../docker-compose.yml stop
 
     echo ""
     echo "[3/4] Starting services (keeping existing containers)..."
-    docker compose up --no-recreate -d || { echo "Start failed!"; read; return 1; }
+    docker compose -f ../docker-compose.yml up --no-recreate -d || { echo "Start failed!"; read; return 1; }
 
     echo ""
     echo "[4/4] Verifying services..."
     sleep 3
-    docker compose ps
+    docker compose -f ../docker-compose.yml ps
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
@@ -100,7 +101,7 @@ deploy_complete() {
     echo "    • SignalR:    http://localhost:5003"
     echo "    • Database:   localhost:5433 (postgres / 123456 / Host)"
     echo ""
-    echo "  View logs:  docker compose logs -f"
+    echo "  View logs:  docker compose -f ../docker-compose.yml logs -f"
     echo ""
     read -p "Press Enter to continue..."
 }
@@ -118,20 +119,20 @@ deploy_backend() {
     echo ""
 
     echo "[1/4] Building backend images..."
-    docker compose build postgres admin-service gateway signalr || { echo "Build failed!"; read; return 1; }
+    docker compose -f ../docker-compose.yml build postgres admin-service gateway signalr file-service || { echo "Build failed!"; read; return 1; }
 
     echo ""
     echo "[2/4] Stopping services..."
-    docker compose stop
+    docker compose -f ../docker-compose.yml stop
 
     echo ""
     echo "[3/4] Starting backend services (keeping existing containers)..."
-    docker compose up --no-recreate -d postgres admin-service gateway signalr || { echo "Start failed!"; read; return 1; }
+    docker compose -f ../docker-compose.yml up --no-recreate -d postgres admin-service gateway signalr file-service || { echo "Start failed!"; read; return 1; }
 
     echo ""
     echo "[4/4] Verifying services..."
     sleep 3
-    docker compose ps
+    docker compose -f ../docker-compose.yml ps
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
@@ -150,30 +151,7 @@ deploy_backend() {
 }
 
 build_only() {
-    clear
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════════╗"
-    echo "║                    BUILDING IMAGES ONLY                          ║"
-    echo "║                                                                  ║"
-    echo "║     (Containers will NOT be started)                             ║"
-    echo "║                                                                  ║"
-    echo "╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-
-    echo "Building all Docker images..."
-    docker compose build || { echo "Build failed!"; read; return 1; }
-
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════════╗"
-    echo "║                 ✅ BUILD COMPLETED                               ║"
-    echo "╚══════════════════════════════════════════════════════════════════╝"
-    echo ""
-    echo "  Images built successfully. To start services, run:"
-    echo "    docker compose up -d"
-    echo ""
-    echo "  Or select option [1] or [2] from this menu to deploy."
-    echo ""
-    read -p "Press Enter to continue..."
+    ./build.sh
 }
 
 stop_services() {
@@ -188,7 +166,7 @@ stop_services() {
     echo ""
 
     echo "Stopping all services..."
-    docker compose stop
+    docker compose -f ../docker-compose.yml stop
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
@@ -212,7 +190,7 @@ stop_remove() {
     echo ""
 
     echo "Removing containers..."
-    docker compose down
+    docker compose -f ../docker-compose.yml down
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
@@ -246,7 +224,7 @@ full_cleanup() {
 
     echo ""
     echo "⚠️  DELETING ALL CONTAINERS AND VOLUMES..."
-    docker compose down -v
+    docker compose -f ../docker-compose.yml down -v
 
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
@@ -281,7 +259,7 @@ view_logs() {
     echo "║                                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
-    docker compose logs -f
+    docker compose -f ../docker-compose.yml logs -f
 }
 
 # Main loop

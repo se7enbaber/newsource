@@ -1,75 +1,266 @@
 ---
-name: mint-erp-frontend-ui
-description: Dùng Wrapper Components như AppGrid, AppButton và Ant Design Token Theme. Dành riêng cho Next.js Frontend. KHÔNG dùng Native Ant Design Table/Button.
+name: mint-erp-frontend
+description: Dùng khi viết code Frontend cho project này — gọi API qua proxy, xử lý token/session, tổ chức thư mục App Router, phân biệt Server Component vs Client Component. KHÔNG dùng cho logic Backend (.NET).
 ---
 
-# Frontend UI Components
+# Frontend — Next.js 16 App Router
 
-Hệ thống cung cấp một loạt các "Siêu Năng Lực" Components (wrapper cho Ant Design) như `AppGrid`, `AppButton` trong `app/components/common`.
+## Kiến trúc proxy bắt buộc
 
-## Các Pattern thực tế (Code Example)
+**Client Component không bao giờ gọi thẳng tới GatewayService.**  
+Mọi request phải đi qua Next.js proxy route:
 
-### 1. Nút bấm thông minh (AppButton)
-Tích hợp tự Check quyền (`permission`), chống spam click (`useDebounce`), auto popconfirm an toàn và xử lý UI Style Token.
+```text
+Client Component (browser)
+  → fetch("/api/proxy/[...path]")         ← relative URL, không có domain
+  → Next.js Route Handler (Node server)   ← server-side, tránh CORS
+  → GatewayService :5000                  ← BACKEND_URL env variable
+  → AdministrationService :7027
+```
 
-```tsx
-// my-nextjs/app/components/common/AppButton.tsx
-export const AppButton = <T,>({
-    title, icon, variant, btnType, onClick, data, permission, confirm, useDebounce = false, ...props
-}: AppButtonProps<T>) => {
-    // 1. Kiểm tra Permission - Nếu không có quyền, return null ngay lập tức
-    const canAccess = !permission || hasPermission(permission);
-    if (!canAccess) return null;
-    
-    // Config Style qua Ant Design Token Container
+**Lý do bắt buộc:** Browser → GatewayService trực tiếp sẽ gặp lỗi CORS và SSL certificate policy trên môi trường LAN local.
+
+---
+
+## Cách gọi API — fetch thuần, pattern chuẩn
+
+### Helper function cơ bản
+
+```typescript
+// lib/api.ts
+const BASE = "/api/proxy";
+
+type FetchOptions = RequestInit & {
+  token?: string;
+};
+
+export async function apiFetch<T>(
+  path: string,
+  options: FetchOptions = {}
+): Promise<T> {
+  const { token, ...init } = options;
+
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error?.message ?? `HTTP ${res.status}`);
+  }
+
+  return res.json();
 }
 ```
 
-**Cách dùng:**
-```tsx
-<AppButton
-  btnType="add"
-  icon={<PlusOutlined />}
-  onClick={() => handleCreate()}
-  permission="AdministrationService.Users.Create"
->
-  Thêm Mới
-</AppButton>
+### Gọi trong Server Component (RSC) — ưu tiên dùng
+
+```typescript
+// app/invoices/page.tsx
+import { apiFetch } from "@/lib/api";
+import { getServerToken } from "@/lib/auth"; // lấy token từ session/cookie
+
+export default async function InvoicesPage() {
+  const token = await getServerToken();
+  const data = await apiFetch<InvoiceListDto>("/invoices", { token });
+
+  return <InvoiceTable data={data} />;
+}
 ```
 
-### 2. Lưới dữ liệu và Thanh tác vụ (AppGrid)
-Dùng React Table tích hợp header thông minh, Toolbar, Action row và State.
+### Gọi trong Client Component — chỉ khi cần interactivity
 
-```tsx
-// my-nextjs/app/components/common/AppGrid.tsx
-export const AppGrid = <T extends AnyObject>({
-    columns, dataSource, loading, statCards, toolbar, rowActions, pagination, ...
-}) => { ... }
-```
+```typescript
+"use client";
 
-**Cách dùng:**
-→ Chi tiết xem: appgrid-rowactions-flow.md
+import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
-### 3. Đa ngôn ngữ (i18next)
-Khi viết text phải đưa vào hàm dịch, default lang truyền tham số 2.
-```tsx
-const { t } = useTranslation();
-t('addNew', 'Thêm mới')
+export function CreateInvoiceForm() {
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(formData: CreateInvoiceDto) {
+    setLoading(true);
+    try {
+      // Token lấy từ context/cookie — xem phần Auth bên dưới
+      await apiFetch("/invoices", {
+        method: "POST",
+        body: JSON.stringify(formData),
+        token: getTokenFromCookie(), // hoặc từ context
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <form>...</form>;
+}
 ```
 
 ---
 
-## ✅ Checklist Frontend UI
-1. **Import Component**: Luôn import từ `components/common/` thay vì từ `antd`.
-2. **Permission Guarding**: Cố gắng pass `permission='ModuleName.Action'` cho tất cả các nút sửa xóa để đảm bảo độ an toàn UI.
-3. **Responsive Flow**: Table tự động render responsive, dùng `statCards` array và `toolbar` component cho UI consistent.
+## Tổ chức thư mục — App Router chuẩn
+
+```
+app/
+├── (auth)/                   # Route group — không ảnh hưởng URL
+│   ├── login/
+│   │   └── page.tsx
+│   └── layout.tsx            # Layout riêng cho auth pages
+│
+├── (dashboard)/              # Route group — các trang cần đăng nhập
+│   ├── layout.tsx            # Layout có Sidebar, Header
+│   ├── invoices/
+│   │   ├── page.tsx          # /invoices — Server Component, fetch data
+│   │   ├── [id]/
+│   │   │   └── page.tsx      # /invoices/:id
+│   │   └── _components/      # Component chỉ dùng trong invoices/
+│   │       ├── InvoiceTable.tsx
+│   │       └── CreateInvoiceForm.tsx
+│   └── users/
+│       └── page.tsx
+│
+├── api/
+│   └── proxy/
+│       └── [...path]/
+│           └── route.ts      # ← Proxy handler — không sửa trừ khi có lý do
+│
+components/                   # Component dùng chung toàn app
+│   ├── ui/                   # Primitive UI (Button, Input, Modal…)
+│   └── shared/               # Business component dùng nhiều nơi
+│
+lib/
+│   ├── api.ts                # apiFetch helper
+│   └── auth.ts               # getServerToken, getTokenFromCookie
+│
+types/
+│   └── dto/                  # TypeScript types map với DTO từ Backend
+│       ├── invoice.dto.ts
+│       └── user.dto.ts
+```
 
 ---
 
-## 🚫 Sai vs Đúng (Anti-Patterns)
+## Server Component vs Client Component
 
-| Sai (Anti-pattern) | Đúng |
-|---|---|
-| Dùng màu HEX hardcode (vd: `#1677ff`) trong style property. | Dùng `theme.useToken().token.colorPrimary`. |
-| Render raw components `import { Button }` và tự tạo logic ẩn/hiện, show popup. | Sử dụng `<AppButton permission=".." confirm="Bạn chắc chắn không?">`. |
-| Handle table rows logic, menu dropdown Actions thủ công. | Truyền mảng cấu hình hành động qua `rowActions` -> Xem: appgrid-rowactions-flow.md |
+| | Server Component (mặc định) | Client Component (`"use client"`) |
+|---|---|---|
+| **Dùng khi** | Fetch data, render tĩnh | onClick, useState, useEffect, form submit |
+| **Có token** | Lấy từ cookie server-side | Lấy từ cookie client-side hoặc context |
+| **Performance** | Tốt hơn — không gửi JS xuống browser | Tốn bundle size hơn |
+| **Ví dụ** | `page.tsx`, layout, data display | Form, button, dropdown, modal |
+
+**Quy tắc:** Mặc định viết Server Component. Chỉ thêm `"use client"` khi thực sự cần browser API hoặc React state.
+
+---
+
+## Types / DTO — mapping với Backend
+
+Mỗi DTO từ Backend (`ShareService`) cần có file type tương ứng ở Frontend:
+
+```typescript
+// types/dto/invoice.dto.ts
+
+export interface InvoiceDto {
+  id: string;           // Guid → string
+  invoiceNo: string;
+  tenantId: string;     // Có nhưng thường không dùng trực tiếp ở UI
+  createdAt: string;    // DateTime → string (ISO 8601)
+  isDeleted: boolean;   // Từ IAuditDeleteEntity — thường filter ở Backend
+}
+
+export interface CreateInvoiceDto {
+  invoiceNo: string;
+  // Không truyền tenantId — Backend tự inject
+  // Không truyền isDeleted — Backend tự quản lý
+}
+
+export interface InvoiceListDto {
+  items: InvoiceDto[];
+  totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+}
+```
+
+> **Không bao giờ truyền `tenantId` hay `isDeleted` từ Frontend** — Backend tự xử lý qua `BaseService` và `IMultiTenant`.
+
+---
+
+## Xử lý lỗi API — pattern chuẩn
+
+```typescript
+// Trong Server Component
+try {
+  const data = await apiFetch<InvoiceListDto>("/invoices", { token });
+  return <InvoiceTable data={data} />;
+} catch (err) {
+  if (err instanceof Error && err.message.includes("401")) {
+    redirect("/login");
+  }
+  // Hiển thị error UI
+  return <ErrorMessage message="Không tải được dữ liệu" />;
+}
+```
+
+```typescript
+// Trong Client Component — hiển thị toast/notification
+try {
+  await apiFetch("/invoices", { method: "POST", body: JSON.stringify(dto) });
+  toast.success("Tạo thành công");
+} catch (err) {
+  toast.error(err instanceof Error ? err.message : "Có lỗi xảy ra");
+}
+```
+
+---
+
+## Proxy Route Handler — cách hoạt động
+
+```typescript
+// app/api/proxy/[...path]/route.ts
+// Handler này forward mọi request từ client → GatewayService
+
+export async function GET(req: Request, { params }: { params: { path: string[] } }) {
+  const path = params.path.join("/");
+  const url = `${process.env.BACKEND_URL}/api/${path}`;
+
+  // Forward headers gốc (bao gồm Authorization: Bearer <token>)
+  const res = await fetch(url, {
+    headers: req.headers,
+  });
+
+  return new Response(res.body, {
+    status: res.status,
+    headers: res.headers,
+  });
+}
+// Tương tự cho POST, PUT, DELETE
+```
+
+> **Không call `BACKEND_URL` trực tiếp từ Client Component** — biến này chỉ available ở server-side (không prefix `NEXT_PUBLIC_`).
+
+---
+
+## Sai vs Đúng (Anti-patterns)
+
+| Sai | Đúng |
+|-----|------|
+| `fetch("http://localhost:5000/api/invoices")` từ Client Component | `apiFetch("/invoices")` → qua proxy |
+| Dùng `NEXT_PUBLIC_BACKEND_URL` expose gateway ra browser | `BACKEND_URL` (server-only, không prefix NEXT_PUBLIC_) |
+| Thêm `tenantId` vào body khi POST | Không truyền — Backend tự inject |
+| Viết toàn bộ page là `"use client"` | Chỉ mark `"use client"` ở component nhỏ cần interactivity |
+| Đặt component dùng chung vào thư mục `_components/` của 1 route | Đặt vào `components/shared/` nếu dùng nhiều nơi |
+| Tạo type inline trong component | Khai báo tập trung trong `types/dto/` |
+
+---
+
+## Tham chiếu chéo (Cross-reference)
+- Multi-tenant: `mint-erp-multi-tenant` — giải thích tại sao không truyền `tenantId` từ Frontend.
+- Permission Frontend: Nếu cần ẩn/hiện UI theo Permission, cần đọc token claim để kiểm tra role — chưa có skill riêng, hỏi lại khi cần.
+- SignalR / Notification: `mint-erp-signalr` — cách subscribe WebSocket notification từ Next.js Client.

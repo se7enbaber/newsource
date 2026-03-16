@@ -1,61 +1,150 @@
 ---
 name: mint-erp-dynamic-permission
-description: Phân quyền động (Dynamic Authorization), sử dụng Redis cache Role Claims để tránh bottleneck CSDL, và attribute HasPermission bảo vệ đầu vào API.
+description: Dùng khi cần bảo vệ Controller/Endpoint bằng phân quyền động, tạo permission mới, seed permission vào DB, hoặc debug lỗi 403. KHÔNG dùng cho logic nghiệp vụ không liên quan đến AuthZ.
 ---
 
-# Dynamic Permissions
+# Dynamic Permission — Phân quyền động
 
-Chặn truy vấn API an toàn bằng Attribute tuỳ chỉnh cấp Application, phân cấp cache tại Redis/Memory Cache.
+## Cơ chế hoạt động
+```text
+Request → Bearer JWT → Middleware giải mã JWT
+       → [HasPermission("Resource.Action")]
+       → Check Redis Cache (Role → Permission list)
+       → Nếu cache miss: Query DB → Cache lại
+       → Cho phép hoặc trả 403
+```
 
-## Các Pattern thực tế (Code Example)
+JWT chứa danh sách **Role** của user, không chứa Permission trực tiếp.  
+Permission được resolve từ Role → lưu cache Redis khi login thành công.
 
-### 1. Phân quyền API với [HasPermission]
-Authorization handler sử dụng header JWT lấy User, và đọc `RoleClaims` đã cache dựa trên Redis (`IDistributedCache`) để so khớp chuỗi tính năng.
+---
 
-**Cách dùng ở Backend Controller:**
+## Convention đặt tên Permission
+
+**Bắt buộc theo format:** `Resource.Action`
+
+| Phần | Quy tắc | Ví dụ |
+|------|---------|-------|
+| `Resource` | PascalCase, tên nghiệp vụ / module | `User`, `Tenant`, `Invoice`, `AuditLog` |
+| `Action` | PascalCase, động từ chuẩn | `View`, `Create`, `Update`, `Delete`, `Export`, `Approve` |
+
+**Danh sách Action chuẩn:**
+
+| Action | Dùng khi |
+|--------|----------|
+| `View` | GET list hoặc GET by id |
+| `Create` | POST tạo mới |
+| `Update` | PUT / PATCH chỉnh sửa |
+| `Delete` | DELETE (soft delete) |
+| `Export` | Xuất file (Excel, PDF…) |
+| `Approve` | Duyệt / xác nhận nghiệp vụ |
+| `Manage` | Toàn bộ CRUD — dùng hạn chế, chỉ cho Super Admin |
+
+**Ví dụ đúng:**
+```
+User.View / User.Create / User.Update / User.Delete
+Tenant.Manage
+Invoice.Export
+AuditLog.View
+```
+
+**Ví dụ sai:**
+```
+❌ user_view        // không dùng snake_case
+❌ GetUser          // không dùng prefix động từ ở Resource
+❌ UserManagement   // không rõ Action
+❌ Admin            // quá chung chung
+```
+
+---
+
+## Cách dùng `[HasPermission]` trong Controller
 ```csharp
-[HttpPost("create")]
-[HasPermission("AdministrationService.Users.Create")]  // <-- Attribute bắt buộc
-public async Task<IActionResult> CreateUser([FromBody] UserCreateDto request)
+[ApiController]
+[Route("api/users")]
+[Authorize]   // ← Bắt buộc ở Controller level
+public class UserController(IUserService userService) : ControllerBase
 {
-    // ... logic
+    [HttpGet]
+    [HasPermission("User.View")]
+    public async Task<IActionResult> GetAll() { ... }
+
+    [HttpPost]
+    [HasPermission("User.Create")]
+    public async Task<IActionResult> Create([FromBody] CreateUserDto dto) { ... }
+
+    [HttpPut("{id}")]
+    [HasPermission("User.Update")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserDto dto) { ... }
+
+    [HttpDelete("{id}")]
+    [HasPermission("User.Delete")]
+    public async Task<IActionResult> Delete(Guid id) { ... }
 }
 ```
 
-### 2. Redis Caching Permission
-Hệ thống Cache `IMemoryCache` (Fallback) hoặc `Distributed Cache` (Redis 7) giữ toàn bộ claim người liên quan đến token, điều này hạn chế gọi truy vấn Entity Framework liên tục trên mỗi action check.
+> `[HasPermission]` đặt ở **Action level**, không đặt ở Controller level.
 
+---
+
+## Seed Permission mới vào DB
+
+Khi tạo module mới, permission phải được seed để Admin có thể gán cho Role.
+
+**Vị trí:** `PermissionSeeder.cs` (hoặc `DataSeeder.cs`) trong `AdministrationService.Infrastructure`.
 ```csharp
-// Code example: Seed và Set cache tự động
-await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(permissions), options);
+// Thêm vào danh sách seed — nhóm theo Resource
+new Permission { Name = "Invoice.View",   Group = "Invoice", Description = "Xem danh sách hóa đơn" },
+new Permission { Name = "Invoice.Create", Group = "Invoice", Description = "Tạo hóa đơn mới" },
+new Permission { Name = "Invoice.Update", Group = "Invoice", Description = "Chỉnh sửa hóa đơn" },
+new Permission { Name = "Invoice.Delete", Group = "Invoice", Description = "Xóa hóa đơn" },
+new Permission { Name = "Invoice.Export", Group = "Invoice", Description = "Xuất file hóa đơn" },
 ```
 
-### 3. Check quyền ẩn Component ở UI (Frontend)
-Thực hiện Auth-guarding ngay trong UI Rendering qua hook React Context.
-```tsx
-import { usePermission } from '@/lib/PermissionProvider';
-
-const { hasPermission } = usePermission();
-
-if (!hasPermission("AdministrationService.Users.Create")) {
-    // Ẩn nội dung hoặc báo lỗi 403 Forbidden
-}
-```
+> `Group` = tên Resource. Seed phải chạy trước hoặc cùng lúc với migration.
 
 ---
 
-## ✅ Checklist
-1. Bổ sung Controller/Action -> Sinh mã Permission string mô tả quy ước `Service.Module.Action` (vd: `AdministrationService.Roles.Delete`).
-2. Gắn attribute `[HasPermission("...")]` vào Action METHOD trước API request handler.
-3. Kế tiếp sang Frontend cập nhật `AppButton` đính kèm property `permission="Service.Module.Action"`.
-4. Nếu thay đổi quyền trong CSDL, đảm bảo Clear Cache/Invalidate để làm tráng bộ nhớ token/user cũ.
+## Debug lỗi 403
+
+Kiểm tra theo thứ tự:
+
+**1 — JWT hợp lệ không?**
+Decode tại jwt.io → kiểm tra claim `roles` và `exp`.
+
+**2 — Redis cache đúng không?**
+Logout → login lại để force re-cache permission list.
+
+**3 — Permission đã seed chưa?**
+```sql
+SELECT * FROM mt_permissions WHERE name = 'Resource.Action';
+```
+
+**4 — Role đã được gán Permission chưa?**
+```sql
+SELECT * FROM mt_role_permissions rp
+JOIN mt_permissions p ON rp.permission_id = p.id
+WHERE rp.role_id = '<role_id>';
+```
+
+**5 — Tên Permission khớp chính xác không?**
+String trong `[HasPermission("...")]` và trong DB phải giống **100%, case-sensitive**.
 
 ---
 
-## 🚫 Sai vs Đúng (Anti-Patterns)
+## Sai vs Đúng (Anti-patterns)
 
-| Sai (Anti-pattern) | Đúng |
-|---|---|
-| Dùng `[Authorize(Roles="Admin")]` chuẩn mặc định của .NET | Dùng Attribute cấp độ Function tính năng `[HasPermission("...")]`. Tính năng mềm dẻo cho Account custom role cấp dưới. |
-| Fetch lại Quyền (Permissions) từ DB mỗi khi middleware verify incoming JWT Token, gây treo DB cục bộ tại peak traffic. | Đọc Array chuỗi Permission Array từ Distributed Cache `Redis` hoặc Identity Token Claims JWT. |
-| Gửi array roles = rỗng khi tạo Dropdown Roles trong Form sửa User ở Frontend. (TODO list cũ) | → Chi tiết xem: role-dropdown-flow.md |
+| Sai | Đúng |
+|-----|------|
+| `[Authorize(Roles = "Admin")]` hardcode role | `[HasPermission("Resource.Action")]` |
+| `[HasPermission]` đặt ở class level | Đặt trên từng HTTP Action method |
+| Permission string tùy tiện mỗi nơi mỗi khác | Tuân theo convention `Resource.Action` |
+| Quên seed sau khi tạo controller | Seed cùng lúc với tạo controller |
+| Bỏ `[Authorize]` ở Controller | Luôn giữ `[Authorize]` ở Controller + `[HasPermission]` ở Action |
+
+---
+
+## Tham chiếu chéo
+- Tạo module mới: `backend-module-checklist` bước 7 phải đi kèm seed permission.
+- Kiến trúc layer: `mint-erp-architecture-layer`.
+- Multi-tenant scope: `mint-erp-multi-tenant`.

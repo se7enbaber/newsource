@@ -11,7 +11,7 @@ updated: 2026-03-10
 Service chuyên biệt phát (broadcast) dữ liệu thời gian thực thông qua WebSocket, giúp tách biệt resource xử lý HTTP và WebSockets cho hệ thống.
 
 ## Flow chính
-Next.js Client → Mở kết nối WebSocket tới Gateway `/notificationHub` → Định tuyến tới `SignalRService` (port 5200).
+Next.js Client → Mở kết nối WebSocket tới Gateway `/notificationHub` → Định tuyến tới `SignalRService` (port 10000 trong Docker).
 Khi Backend (AdministrationService) muốn gửi thông báo → Gửi HTTP POST trực tiếp tới REST API của SignalRService → SignalRService broadcast message qua SignalR Client → Nếu có scale nhiều instance, Redis backplane sẽ tự động đồng bộ.
 
 ## Acceptance Criteria

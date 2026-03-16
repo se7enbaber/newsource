@@ -13,6 +13,8 @@ obj/
 logs/
 *.user
 .vs/
+.nuget/
+.dotnet/
 
 # ================================
 # Node.js

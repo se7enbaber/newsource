@@ -8,16 +8,15 @@ All configuration is centralized in `.env` file:
 POSTGRES_DB=Host
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=123456
-POSTGRES_HOST_PORT=5433
-
-ADMIN_HOST_PORT=7028
+POSTGRES_HOST_PORT=5443
+ADMIN_HOST_PORT=7038
 GATEWAY_HOST_PORT=5002
-SIGNALR_HOST_PORT=5003
-FRONTEND_HOST_PORT=3001
+SIGNALR_HOST_PORT=10000
+FRONTEND_HOST_PORT=3011
 
-ADMIN_URL=http://localhost:7028
-ADMIN_HANGFIRE=http://localhost:7028/hangfire
-ADMIN_SWAGGER=http://localhost:7028/swagger
+ADMIN_URL=http://localhost:7038
+ADMIN_HANGFIRE=http://localhost:7038/hangfire
+ADMIN_SWAGGER=http://localhost:7038/swagger
 ...
 ```
 
@@ -48,9 +47,9 @@ cd Deploy
 
 | Option | Description | Services |
 |--------|-------------|----------|
-| **[1] Complete** | Deploy all services | PostgreSQL + Admin + Gateway + SignalR + Frontend ✅ |
-| **[2] Backend Only** | Backend services only | PostgreSQL + Admin + Gateway + SignalR |
-| **[3] Build Only** | Build images (no start) | Builds all Docker images |
+| **[1] Complete** | Deploy all services | PostgreSQL + Admin + Gateway + SignalR + File + Frontend ✅ |
+| **[2] Backend Only** | Backend services only | PostgreSQL + Admin + Gateway + SignalR + File |
+| **[3] Build Only** | Build images (no start) | Interactive menu to build specific services or all |
 | **[4] Stop Services** | Stop all (keep data) | Stops containers, preserves volumes |
 | **[5] Stop & Remove** | Remove containers | Removes containers, keeps volumes/data |
 | **[6] Full Cleanup** | ⚠️ Delete everything | Removes containers AND volumes (data loss!) |
@@ -64,13 +63,13 @@ cd Deploy
 
 | Service | URL | Configuration |
 |---------|-----|---|
-| **Frontend** | http://localhost:3001 | FRONTEND_URL, FRONTEND_HOST_PORT |
-| **Admin API** | http://localhost:7028 | ADMIN_URL, ADMIN_HOST_PORT |
-| **Admin - Hangfire** | http://localhost:7028/hangfire | ADMIN_HANGFIRE |
-| **Admin - Swagger** | http://localhost:7028/swagger | ADMIN_SWAGGER |
+| **Frontend** | http://localhost:3011 | FRONTEND_URL, FRONTEND_HOST_PORT |
+| **Admin API** | http://localhost:7038 | ADMIN_URL, ADMIN_HOST_PORT |
+| **Admin - Hangfire** | http://localhost:7038/hangfire | ADMIN_HANGFIRE |
+| **Admin - Swagger** | http://localhost:7038/swagger | ADMIN_SWAGGER |
 | **Gateway** | http://localhost:5002 | GATEWAY_URL, GATEWAY_HOST_PORT |
-| **SignalR** | http://localhost:5003 | SIGNALR_URL, SIGNALR_HOST_PORT |
-| **PostgreSQL** | localhost:5433 | POSTGRES_HOST_PORT, POSTGRES_* |
+| **SignalR** | http://localhost:10000 | SIGNALR_URL, SIGNALR_HOST_PORT |
+| **PostgreSQL** | localhost:5443 | POSTGRES_HOST_PORT, POSTGRES_* |
 
 ---
 
@@ -109,11 +108,11 @@ http://localhost:7028/health
 ### Edit .env file
 ```bash
 # Change any of these values:
-POSTGRES_HOST_PORT=5433
-ADMIN_HOST_PORT=7028
+POSTGRES_HOST_PORT=5443
+ADMIN_HOST_PORT=7038
 GATEWAY_HOST_PORT=5002
-SIGNALR_HOST_PORT=5003
-FRONTEND_HOST_PORT=3001
+SIGNALR_HOST_PORT=10000
+FRONTEND_HOST_PORT=3011
 ```
 
 ### Redeploy with new configuration
@@ -133,7 +132,7 @@ All services automatically use `.env` values ✅
 Database: Host
 Username: postgres
 Password: 123456
-Port: 5433 (host) / 5432 (container)
+Port: 5443 (host) / 5432 (container)
 Connection: Host=postgres;Port=5432;Database=Host;Username=postgres;Password=123456
 ```
 
@@ -212,12 +211,12 @@ docker compose logs -f
 
 ### View Admin Swagger Docs
 ```
-http://localhost:7028/swagger
+http://localhost:7038/swagger
 ```
 
 ### View Hangfire Dashboard
 ```
-http://localhost:7028/hangfire
+http://localhost:7038/hangfire
 ```
 
 ### Database Backup
@@ -236,7 +235,7 @@ docker compose exec -T postgres psql -U postgres Host < backup.sql
 
 - **Configuration:** `.env` file
 - **Docker Compose:** `docker-compose.yml`
-- **Services:** PostgreSQL, Admin API, Gateway, SignalR, Frontend
+- **Services:** PostgreSQL, Admin API, Gateway, SignalR, File Service, Frontend
 
 ---
 

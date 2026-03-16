@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Table, TableProps, Empty, Skeleton, theme, Dropdown, MenuProps, Space, Tooltip, Popconfirm, Button } from 'antd';
 import { AnyObject } from 'antd/es/_util/type';
-import { AppStatCard, AppStatCardProps } from './AppStatCard';
+import { AppStatCardProps } from './AppStatCard';
 import { AppStatCards, AppStatCardsItem } from './AppStatCards';
 import { AppButton, AppButtonProps } from './AppButton';
 import { useContrastColor } from '@/hooks/useContrastColor';
@@ -111,7 +111,7 @@ export const AppGrid = <T extends AnyObject>({
     // 1. Tự động tính toán Columns (Thêm No. và Actions)
     const finalColumns = React.useMemo(() => {
         if (!columns) return [];
-        
+
         let cols = [...columns];
 
         // Thêm cột STT vào đầu
@@ -143,14 +143,14 @@ export const AppGrid = <T extends AnyObject>({
                 render: (_: any, record: T) => {
                     const rowKey = getRowKey(record);
                     const isHovered = hoveredRowKey === rowKey;
-                    
+
                     // Nếu <= 2 actions: hiển thị trực tiếp
                     if (rowActions.length < 3) {
                         return (
                             <div className={`flex justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity duration-150`}>
                                 {rowActions.map(action => {
                                     const { key, onClick, label, icon, confirm, danger, ...actionProps } = action;
-                                    
+
                                     const button = (
                                         <AppButton
                                             key={key}
@@ -208,11 +208,11 @@ export const AppGrid = <T extends AnyObject>({
                     return (
                         <div className={`flex justify-end opacity-0 group-hover/row:opacity-100 transition-opacity duration-150`}>
                             <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
-                                <Button 
-                                    size="small" 
-                                    type="text" 
-                                    icon={<MoreOutlined />} 
-                                    onClick={(e) => e.stopPropagation()} 
+                                <Button
+                                    size="small"
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                    onClick={(e) => e.stopPropagation()}
                                     className="hover:scale-110 active:scale-90 transition-transform"
                                 />
                             </Dropdown>
@@ -233,11 +233,11 @@ export const AppGrid = <T extends AnyObject>({
             <div className="mb-6 space-y-6">
                 {stats && <AppStatCards items={stats} />}
                 {toolbar && (
-                    <div 
+                    <div
                         className="flex justify-between items-center p-4 rounded-xl shadow-sm border"
-                        style={{ 
+                        style={{
                             backgroundColor: token.colorBgContainer,
-                            borderColor: token.colorBorderSecondary 
+                            borderColor: token.colorBorderSecondary
                         }}
                     >
                         <div className="flex-1" /> {/* Placeholder cho bên trái nếu cần */}
@@ -274,12 +274,12 @@ export const AppGrid = <T extends AnyObject>({
     return (
         <div className={`app-grid-container ${className || ''}`} ref={containerRef}>
             {renderHeader()}
-            
-            <div 
+
+            <div
                 className="rounded-2xl shadow-sm border overflow-hidden"
-                style={{ 
+                style={{
                     backgroundColor: token.colorBgContainer,
-                    borderColor: token.colorBorderSecondary 
+                    borderColor: token.colorBorderSecondary
                 }}
             >
                 {loading && (!dataSource || dataSource.length === 0) ? (
@@ -336,15 +336,15 @@ export const AppGrid = <T extends AnyObject>({
                         }}
                         locale={{
                             emptyText: (
-                                <Empty 
-                                    image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                                <Empty
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
                                     description={
                                         <Space orientation="vertical" size={12}>
                                             <span style={{ color: token.colorTextDescription }}>{t('no_data', 'Chưa có dữ liệu')}</span>
                                             {onEmptyClick && (
-                                                <AppButton 
-                                                    size="small" 
-                                                    icon={<PlusOutlined />} 
+                                                <AppButton
+                                                    size="small"
+                                                    icon={<PlusOutlined />}
                                                     onClick={onEmptyClick}
                                                     variant="secondary"
                                                 >
@@ -352,7 +352,7 @@ export const AppGrid = <T extends AnyObject>({
                                                 </AppButton>
                                             )}
                                         </Space>
-                                    } 
+                                    }
                                 />
                             )
                         }}

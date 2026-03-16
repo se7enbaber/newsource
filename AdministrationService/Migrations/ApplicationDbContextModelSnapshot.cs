@@ -3,20 +3,17 @@ using System;
 using AdministrationService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AdministrationService.Infrastructure.Data.Migrations
+namespace AdministrationService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260302180955_AddJobLogsTable")]
-    partial class AddJobLogsTable
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -252,6 +249,9 @@ namespace AdministrationService.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("LastMigratedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()

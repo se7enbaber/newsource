@@ -21,6 +21,7 @@ namespace AdministrationService.Extensions
             
             // Jobs
             services.AddScoped<Services.Jobs.JobCleanupService>();
+            services.AddScoped<Services.ITenantMigrationJob, Services.TenantMigrationJob>();
 
             return services;
         }

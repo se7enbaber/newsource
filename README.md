@@ -4,6 +4,7 @@
 
 ## 🏗 Tổng quan Kiến trúc
 
+Tài liệu quan trọng nhất cho AI: [GEMINI.md](GEMINI.md) (Xem đầu tiên)
 Tài liệu chi tiết về kiến trúc hệ thống và luồng dữ liệu xem tại: [CONTEXT.md](.agent/CONTEXT.md) và danh mục đặc tả tại [INDEX.md](.agent/specs/INDEX.md)
 
 ---

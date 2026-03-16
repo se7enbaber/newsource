@@ -54,7 +54,8 @@ catch (Exception ex)
 }
 
 // CORS
-builder.Services.AddCommonCors("SignalRPolicy", new[] { "http://localhost:3000" });
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "http://localhost:3001", "http://localhost:3011" };
+builder.Services.AddCommonCors("SignalRPolicy", allowedOrigins);
 
 // Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -85,7 +86,7 @@ builder.Services.AddCommonHealthChecks("Gateway")
         name: "admin-service",
         tags: new[] { "downstream", "ready" })
     .AddUrlGroup(
-        uri: new Uri("http://signalr:8080/health/live"),
+        uri: new Uri("http://signalr:10000/health/live"),
         name: "signalr-service",
         tags: new[] { "downstream", "ready" });
 

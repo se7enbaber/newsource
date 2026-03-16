@@ -110,7 +110,7 @@ namespace AdministrationService.Services
             if (tenant == null || string.IsNullOrEmpty(tenant.ConnectionString)) return false;
 
             // Đưa việc Migration vào Hangfire để chạy ngầm (tránh timeout request)
-            _backgroundJobClient.Enqueue<ITenantMigrationJob>(job => job.RunMigrationAsync(tenant.Id, _tenantService.TenantId));
+            _backgroundJobClient.Enqueue<TenantMigrationJob>(job => job.RunMigrationAsync(tenant.Id, _tenantService.TenantId));
             
             return true;
         }

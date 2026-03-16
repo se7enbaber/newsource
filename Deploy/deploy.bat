@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 REM ╔══════════════════════════════════════════════════════════════════╗
 REM ║          DOCKER DEPLOYMENT MANAGER - SELECT OPTION              ║
 REM ║                PostgreSQL: Host/123456                           ║
@@ -91,22 +92,22 @@ echo ╚════════════════════════
 echo.
 
 echo [1/4] Building images...
-docker compose build
+docker compose -f ../docker-compose.yml build
 if errorlevel 1 goto :error
 
 echo.
 echo [2/4] Stopping services...
-docker compose stop
+docker compose -f ../docker-compose.yml stop
 
 echo.
 echo [3/4] Starting services (keeping existing containers)...
-docker compose up --no-recreate -d
+docker compose -f ../docker-compose.yml up --no-recreate -d
 if errorlevel 1 goto :error
 
 echo.
 echo [4/4] Verifying services...
 timeout /t 3 /nobreak
-docker compose ps
+docker compose -f ../docker-compose.yml ps
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════╗
@@ -120,7 +121,7 @@ echo    • Gateway:    http://localhost:5002
 echo    • SignalR:    http://localhost:5003
 echo    • Database:   localhost:5433 ^(postgres / 123456 / Host^)
 echo.
-echo  View logs:  docker compose logs -f
+echo  View logs:  docker compose -f ../docker-compose.yml logs -f
 echo.
 pause
 goto :menu
@@ -140,22 +141,22 @@ echo ╚════════════════════════
 echo.
 
 echo [1/4] Building backend images...
-docker compose build postgres admin-service gateway signalr
+docker compose -f ../docker-compose.yml build postgres admin-service gateway signalr file-service
 if errorlevel 1 goto :error
 
 echo.
 echo [2/4] Stopping services...
-docker compose stop
+docker compose -f ../docker-compose.yml stop
 
 echo.
 echo [3/4] Starting backend services (keeping existing containers)...
-docker compose up --no-recreate -d postgres admin-service gateway signalr
+docker compose -f ../docker-compose.yml up --no-recreate -d postgres admin-service gateway signalr file-service
 if errorlevel 1 goto :error
 
 echo.
 echo [4/4] Verifying services...
 timeout /t 3 /nobreak
-docker compose ps
+docker compose -f ../docker-compose.yml ps
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════╗
@@ -187,7 +188,7 @@ echo ╚════════════════════════
 echo.
 
 echo Building all Docker images...
-docker compose build
+docker compose -f ../docker-compose.yml build
 if errorlevel 1 goto :error
 
 echo.
@@ -217,7 +218,7 @@ echo ╚════════════════════════
 echo.
 
 echo Stopping all services...
-docker compose stop
+docker compose -f ../docker-compose.yml stop
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════╗
@@ -243,7 +244,7 @@ echo ╚════════════════════════
 echo.
 
 echo Removing containers...
-docker compose down
+docker compose -f ../docker-compose.yml down
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════╗
@@ -278,7 +279,7 @@ if /i not "%confirm%"=="yes" (
 
 echo.
 echo ⚠️  DELETING ALL CONTAINERS AND VOLUMES...
-docker compose down -v
+docker compose -f ../docker-compose.yml down -v
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════╗
@@ -299,7 +300,7 @@ echo ╔════════════════════════
 echo ║                    SERVICE STATUS                                ║
 echo ╚══════════════════════════════════════════════════════════════════╝
 echo.
-docker compose ps
+docker compose -f ../docker-compose.yml ps
 
 echo.
 pause
@@ -317,7 +318,7 @@ echo ║     Press Ctrl+C to stop viewing logs                           ║
 echo ║                                                                  ║
 echo ╚══════════════════════════════════════════════════════════════════╝
 echo.
-docker compose logs -f
+docker compose -f ../docker-compose.yml logs -f
 
 goto :menu
 

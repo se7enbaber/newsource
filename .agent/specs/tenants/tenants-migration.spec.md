@@ -2,7 +2,7 @@
 feature: Triển khai CSDL Động
 module: AdministrationService
 status: stable
-updated: 2026-03-14
+updated: 2026-03-15
 ---
 
 # Quản lý Migrations Tenants
@@ -19,6 +19,7 @@ Deploy Version mới Backend → Tooling Worker (Hangfire) tạo list Tenant t�
 - [ ] Gửi Real-time Alert Notification trên Dashboard Host sau khi Update xong Client CSDL.
 
 ## Edge Cases
+- Hangfire job activation: trÃ¡nh enqueue/schedule job bÃ¡m theo `interface`/`abstract` type trừ khi Ä‘Ã£ Ä‘Äƒng kÃ½ DI mapping. Xem: [Hangfire abstract/interface job activation](../administration/bug-hangfire-abstract-job.spec.md).
 - Fail Db của Tenant Index `1` không được phép Halt tiến trình Update Script DB của Tenant Index `2`. Phục hồi Graceful exception Worker.
 
 ## Liên quan

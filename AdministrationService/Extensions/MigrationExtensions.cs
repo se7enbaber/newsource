@@ -18,31 +18,38 @@ namespace AdministrationService.Extensions
                 var context = services.GetRequiredService<ApplicationDbContext>();
                 var logger = services.GetRequiredService<ILogger<Program>>();
 
-                
+                // 2. Tự động Migration cho Host Database
                 var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
                 if (pendingMigrations.Any())
                 {
-                    logger.LogInformation("--> Phát hiện {Count} bản cập nhật mới. Đang tiến hành Update Database...", pendingMigrations.Count());
-
-                    // Chỉ chạy những bản cập nhật còn thiếu (Tương đương lệnh 'dotnet ef database update')
+                    logger.LogInformation("--> [HOST] Phát hiện {Count} bản cập nhật mới. Đang tiến hành Update Database...", pendingMigrations.Count());
                     await context.Database.MigrateAsync();
-
-                    logger.LogInformation("--> Update Database thành công.");
+                    logger.LogInformation("--> [HOST] Update Database thành công.");
                 }
                 else
                 {
-                    logger.LogInformation("--> Database đã ở phiên bản mới nhất. Không có thay đổi nào được áp dụng.");
+                    logger.LogInformation("--> [HOST] Database đã ở phiên bản mới nhất.");
                 }
                 
                 // 3. Tự động Migration cho toàn bộ Tenant có cơ sở dữ liệu riêng (isolated)
-                var tenants = await context.Tenants
-                    .IgnoreQueryFilters()
-                    .Where(t => !string.IsNullOrEmpty(t.ConnectionString) && !t.IsDeleted)
-                    .ToListAsync();
+                logger.LogInformation("--> [TENANTS] Đang lấy danh sách Tenant...");
+                List<Tenant> tenants;
+                try 
+                {
+                    tenants = await context.Tenants
+                        .IgnoreQueryFilters()
+                        .Where(t => !string.IsNullOrEmpty(t.ConnectionString) && !t.IsDeleted)
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "--> [TENANTS] Không thể lấy danh sách Tenant. Có thể bảng Tenants chưa tồn tại hoặc bị lỗi.");
+                    return; 
+                }
 
                 if (tenants.Any())
                 {
-                    logger.LogInformation("--> Phát hiện {Count} Tenant có DB riêng. Đang tự động kiểm tra Migration...", tenants.Count);
+                    logger.LogInformation("--> [TENANTS] Phát hiện {Count} Tenant có DB riêng.", tenants.Count);
                     foreach (var tenant in tenants)
                     {
                         try

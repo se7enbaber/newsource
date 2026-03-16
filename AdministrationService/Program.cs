@@ -12,6 +12,7 @@ using OpenIddict.Validation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using AdministrationService.Authorization;
 using Hangfire;
+using Hangfire.Redis.StackExchange;
 using Hangfire.PostgreSql;
 using Hangfire.Console;
 using AdministrationService.Services.Notifications;
@@ -65,6 +66,7 @@ builder.Services.AddMemoryCache();
 var redisHost = builder.Configuration["Redis:Host"] ?? "redis";
 var redisPort = builder.Configuration.GetValue<int>("Redis:Port", 6379);
 var redisPassword = builder.Configuration["Redis:Password"] ?? "redis123";
+IConnectionMultiplexer? redisConnection = null;
 
 try
 {
@@ -78,10 +80,10 @@ try
         AbortOnConnectFail = false
     };
 
-    var connection = ConnectionMultiplexer.Connect(redisOptions);
-    if (connection.IsConnected)
+    redisConnection = ConnectionMultiplexer.Connect(redisOptions);
+    if (redisConnection.IsConnected)
     {
-        builder.Services.AddSingleton<IConnectionMultiplexer>(connection);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
         builder.Services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = $"{redisHost}:{redisPort},password={redisPassword},abortConnect=false";
@@ -109,13 +111,33 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler
 builder.Services.AddScoped<IAuthorizationHandler, FeatureAuthorizationHandler>();
 builder.Services.AddAuthorization();
 
-// 5. Hangfire
-builder.Services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseConsole()
-    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
+// 5. Hangfire with Redis Storage
+builder.Services.AddHangfire((serviceProvider, config) =>
+{
+    config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseConsole()
+        // Prefer resolving job types from DI (supports interface jobs if registered),
+        // then fall back to ActivatorUtilities for concrete types.
+        .UseActivator(new DiFirstJobActivator(serviceProvider.GetRequiredService<IServiceScopeFactory>()));
+
+    if (redisConnection != null && redisConnection.IsConnected)
+    {
+        config.UseRedisStorage(redisConnection, new RedisStorageOptions
+        {
+            Prefix = "hangfire:",
+            Db = 0
+        });
+    }
+    else
+    {
+        // Fallback if Redis is not connected
+        config.UsePostgreSqlStorage(options =>
+            options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+    }
+});
 
 builder.Services.AddHangfireServer();
 
@@ -164,7 +186,9 @@ builder.Services.AddControllers();
 // 9. SignalR HTTP Client with Resilience
 builder.Services.AddHttpClient("SignalRService", client =>
 {
-    var baseUrl = builder.Configuration["SignalRService:BaseUrl"] ?? "http://localhost:5003";
+    var isContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+    var defaultUrl = isContainer ? "http://signalr:10000" : "http://localhost:5003";
+    var baseUrl = builder.Configuration["SignalRService:BaseUrl"] ?? defaultUrl;
     client.BaseAddress = new Uri(baseUrl);
 })
 .AddStandardResilienceHandler(options =>
@@ -278,6 +302,52 @@ public class HangfireCustomAuthorizationFilter : Hangfire.Dashboard.IDashboardAu
     public bool Authorize(Hangfire.Dashboard.DashboardContext context)
     {
         return true;
+    }
+}
+
+public sealed class DiFirstJobActivator : JobActivator
+{
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    public DiFirstJobActivator(IServiceScopeFactory serviceScopeFactory)
+    {
+        _serviceScopeFactory = serviceScopeFactory;
+    }
+
+    public override JobActivatorScope BeginScope(JobActivatorContext context)
+    {
+        return new Scope(_serviceScopeFactory.CreateScope());
+    }
+
+    private sealed class Scope : JobActivatorScope
+    {
+        private readonly IServiceScope _scope;
+
+        public Scope(IServiceScope scope)
+        {
+            _scope = scope;
+        }
+
+        public override object Resolve(Type type)
+        {
+            var resolved = _scope.ServiceProvider.GetService(type);
+            if (resolved != null)
+                return resolved;
+
+            if (type.IsInterface || type.IsAbstract)
+            {
+                throw new InvalidOperationException(
+                    $"Hangfire job type '{type.FullName}' is abstract/interface and is not registered in DI. " +
+                    $"Register it (e.g. services.AddScoped<{type.Name}, Impl>()) or re-enqueue using a concrete job type.");
+            }
+
+            return ActivatorUtilities.CreateInstance(_scope.ServiceProvider, type);
+        }
+
+        public override void DisposeScope()
+        {
+            _scope.Dispose();
+        }
     }
 }
 

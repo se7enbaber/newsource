@@ -255,7 +255,7 @@ const Navbar: React.FC = () => {
         <Sider
             width={260}
             theme="light"
-            className="h-screen flex flex-col shadow-2xl border-none relative z-[100]"
+            className="h-screen shadow-2xl border-none relative z-[100] overflow-hidden"
             style={{
                 backgroundColor: sidebarBg,
                 transition: 'all 0.3s ease'
@@ -290,7 +290,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* MAIN MENU SCROLLABLE */}
-            <div className="flex-1 overflow-y-auto custom-sidebar-scrollbar py-2 px-2">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden custom-sidebar-scrollbar py-2 px-2 pb-[100px]">
                 <ConfigProvider
                     theme={{
                         components: {
@@ -325,7 +325,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* BOTTOM SECTION - USER PROFILE */}
-            <div className="shrink-0 border-t border-white/10 p-3 bg-black/15">
+            <div className="absolute bottom-0 left-0 w-full border-t border-white/10 p-3 bg-inherit backdrop-blur-md z-[101]">
                 <Dropdown 
                     menu={{ items: profileMenuItems }} 
                     placement="topRight" 
@@ -345,7 +345,7 @@ const Navbar: React.FC = () => {
                             >
                                 {userName ? userName.charAt(0).toUpperCase() : 'A'}
                             </Avatar>
-                            <div className="overflow-hidden">
+                            <div className="overflow-hidden text-left">
                                 <div className="text-white font-semibold text-[14px] leading-tight truncate">
                                     {userName || 'User'}
                                 </div>
@@ -466,17 +466,28 @@ const Navbar: React.FC = () => {
 
                 /* Scrollbar Customization */
                 .custom-sidebar-scrollbar::-webkit-scrollbar {
-                    width: 4px;
+                    width: 6px;
                 }
                 .custom-sidebar-scrollbar::-webkit-scrollbar-track {
                     background: transparent;
                 }
                 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255,255,255,0.15);
+                    background: rgba(255,255,255,0.3) !important;
                     border-radius: 10px;
                 }
                 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255,255,255,0.25);
+                    background: rgba(255,255,255,0.5) !important;
+                }
+                .custom-sidebar-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255,255,255,0.3) transparent;
+                }
+
+                /* Cực kỳ quan trọng: Để flex-col hoạt động bên trong Sider của Ant Design */
+                .ant-layout-sider-children {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    height: 100% !important;
                 }
 
                 /* Layout helper */

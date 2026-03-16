@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AdministrationService.Infrastructure.Data.Migrations
+namespace AdministrationService.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260306162059_AddLogoUrlToTenant")]
-    partial class AddLogoUrlToTenant
+    [Migration("20260315074500_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

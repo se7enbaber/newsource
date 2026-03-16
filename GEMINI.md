@@ -1,0 +1,22 @@
+# GEMINI.md - Core Project Context & Critical Rules
+
+> [!IMPORTANT]
+> This file MUST be read first by any AI agent before performing any task in this codebase.
+
+## Project Summary
+[Add project summary here]
+
+## Critical Instructions for AI
+1. **Always Read This File First**: Before starting any research or task, read the contents of `GEMINI.md`.
+2. **Follow ANTIGRAVITY_INSTRUCTIONS.md**: The core workflow is defined in `.agent/ANTIGRAVITY_INSTRUCTIONS.md`.
+3. **Respect Service Rules**: Read the `.md` files of each service (e.g., `NEXTJS.md`) as specified in the global rules.
+4. **Mandatory Analysis**: Always apply the `erp-analyst` skill to analyze and confirm requirements before starting code implementation, particularly for Next.js tasks.
+5. **Clean Up**: Always delete unused `.log` and `.txt` files after completing a task to keep the workspace clean.
+
+## Current Priorities
+- [List current priorities here]
+
+## Tech Stack
+- **Backend**: .NET / C#
+- **Frontend**: Next.js / TypeScript
+- **Infrastructure**: Docker, SignalR, Hangfire, Redis

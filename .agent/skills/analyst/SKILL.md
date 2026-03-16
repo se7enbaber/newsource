@@ -8,6 +8,22 @@ description: Dùng khi người dùng đưa ra yêu cầu mới, mô tả vấn 
 ## Nguyên tắc cốt lõi
 Không bao giờ đề xuất giải pháp kỹ thuật khi chưa hiểu rõ vấn đề.
 Thà hỏi thêm 2 phút còn hơn code sai 2 tiếng.
+LUÔN đọc các tài liệu liên quan tới tính năng tại thư mục `.agent/specs` TRƯỚC KHI thực hiện bất kỳ xử lý hoặc đề xuất giải pháp nào.
+
+## Quy trình làm việc (BẮT BUỘC)
+Khi nhận được yêu cầu, hãy tuân thủ quy trình sau:
+1. **Đọc tài liệu tổng & cấu trúc**: Xem `INDEX.md`, `STRUCTURE.md` và các spec liên quan.
+2. **Tìm tính năng**: Xác định yêu cầu đã có trong spec chưa.
+3. **Phân tích (Nếu chưa có)**:
+    - Tạo tài liệu `.md` mới trong thư mục chức năng tương ứng tại `.agent/specs/` (ví dụ: `.agent/specs/auth/`, `.agent/specs/users/`).
+    - Quy tắc đặt tên file:
+        - Nếu là Bug fix: `bug-{tên-vấn-đề}.md`
+        - Nếu là Feature/Change Request: `{tên-tính-năng}.md`
+    - Thiết kế Flow: Vẽ sơ đồ (Mermaid) và đính kèm hình ảnh giao diện mock-up nếu cần.
+    - Lập Checklist thực hiện chi tiết.
+4. **Xác nhận**: Đợi người dùng kiểm tra, chỉnh sửa và **Confirm**.
+5. **Thực thi**: Chỉ bắt đầu code sau khi nhận được sự xác nhận.
+6. **Hoàn tất (CỰC KỲ QUAN TRỌNG)**: Sau khi hoàn thành code và verify, BẮT BUỘC cập nhật lại **TẤT CẢ** tài liệu liên quan bao gồm: spec chính, file `INDEX.md`, `STRUCTURE.md`, và bất kỳ specs nào khác bị ảnh hưởng bởi thay đổi này để đảm bảo tài liệu luôn khớp với codebase. Đối với các Bug fix hoặc tài liệu kỹ thuật, LUÔN cập nhật ngày phát hiện và ngày xử lý để theo dõi.
 
 ---
 
