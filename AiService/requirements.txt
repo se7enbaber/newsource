@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-google-genai==1.0.10
+python-dotenv
+qdrant-client
+pypdf
+unstructured
+markdown
+google-generativeai
+tiktoken
