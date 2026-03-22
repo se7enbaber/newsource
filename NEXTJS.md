@@ -18,6 +18,7 @@
 - **Verification**: Luôn chạy test và verify thủ công trước khi báo hoàn thành.
 
 ## 3. Quy tắc UI/UX
+- **Design System**: Tuân thủ triệt để các nguyên tắc thiết kế và components dùng chung được định nghĩa tại [.agent/DESIGN.md](.agent/DESIGN.md).
 - **Component**: Luôn sử dụng các component dùng chung từ `app/components/common` (ví dụ: `AppGrid`, `AppButton`, `AppLayout`) thay vì import trực tiếp từ thư viện Ant Design.
 - **Design**: Tuân thủ phong cách thiết kế hiện đại, premium, sử dụng các micro-animations và hiệu ứng mượt mà.
 - **i18n**: Luôn sử dụng `useTranslation` để đa ngôn ngữ hóa các text hiển thị.

@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY my-nextjs/package.json my-nextjs/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 # Stage 2: Build
@@ -11,7 +11,7 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY my-nextjs ./
+COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build
 
@@ -27,7 +27,7 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Install only production dependencies
-COPY my-nextjs/package.json my-nextjs/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --only=production && \
     npm cache clean --force
 

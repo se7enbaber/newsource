@@ -216,5 +216,19 @@
     "dash_used_memory_caps": "USED MEMORY",
     "dash_peak_memory_caps": "PEAK MEMORY",
     "dash_cpu_usage_caps": "CPU USAGE",
-    "dash_connected_clients_caps": "CONNECTED CLIENTS"
+    "dash_connected_clients_caps": "CONNECTED CLIENTS",
+    "ai_assistant_title": "Business AI Assistant",
+    "ai_chat_placeholder": "Ask me about business processes...",
+    "ai_welcome_title": "Hello! How can I help you today?",
+    "ai_welcome_subtitle": "I am an ERP Business Process specialist. Ask me anything to get started.",
+    "ai_suggest_1": "What are the sales process steps?",
+    "ai_suggest_2": "How to create a new Tenant?",
+    "ai_suggest_3": "What is the system security policy?",
+    "ai_suggest_4": "Guide for Inventory management?",
+    "clear_history": "Clear history",
+    "ai_knowledge_only": "Business Knowledge Only",
+    "ai_shift_enter_hint": "Shift + Enter to add a line",
+    "ai_re_ingest": "Re-ingest Knowledge (Admin)",
+    "ai_ingest_success": "Knowledge base re-ingested successfully!",
+    "ai_ingest_error": "Error re-ingesting knowledge"
 }

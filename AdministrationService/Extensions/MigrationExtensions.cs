@@ -19,16 +19,33 @@ namespace AdministrationService.Extensions
                 var logger = services.GetRequiredService<ILogger<Program>>();
 
                 // 2. Tự động Migration cho Host Database
-                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
-                if (pendingMigrations.Any())
+                try
                 {
-                    logger.LogInformation("--> [HOST] Phát hiện {Count} bản cập nhật mới. Đang tiến hành Update Database...", pendingMigrations.Count());
-                    await context.Database.MigrateAsync();
-                    logger.LogInformation("--> [HOST] Update Database thành công.");
+                    var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                    if (pendingMigrations.Any())
+                    {
+                        logger.LogInformation("--> [HOST] Phát hiện {Count} bản cập nhật mới. Đang tiến hành Update Database...", pendingMigrations.Count());
+                        await context.Database.MigrateAsync();
+                        logger.LogInformation("--> [HOST] Update Database thành công.");
+                    }
+                    else
+                    {
+                        logger.LogInformation("--> [HOST] Database đã ở phiên bản mới nhất.");
+                    }
                 }
-                else
+                catch (Exception migrateEx)
                 {
-                    logger.LogInformation("--> [HOST] Database đã ở phiên bản mới nhất.");
+                    // Check if it's "relation already exists" error (idempotent)
+                    string exceptionMessage = migrateEx.ToString();
+                    if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists"))
+                    {
+                        logger.LogInformation("--> [HOST] Database bảng đã tồn tại. Bỏ qua lỗi migration.");
+                    }
+                    else
+                    {
+                        logger.LogError(migrateEx, "--> [HOST] Lỗi không mong muốn khi cập nhật database.");
+                        throw;
+                    }
                 }
                 
                 // 3. Tự động Migration cho toàn bộ Tenant có cơ sở dữ liệu riêng (isolated)
@@ -54,7 +71,7 @@ namespace AdministrationService.Extensions
                     {
                         try
                         {
-                            await MigrateTenantAsync(tenant, services);
+                            await MigrateTenantAsync(tenant, services, logger);
                             logger.LogInformation("--> [OK] Migration hoàn tất cho Tenant: {Name}", tenant.Name);
                         }
                         catch (Exception ex)
@@ -74,7 +91,7 @@ namespace AdministrationService.Extensions
             }
         }
 
-        private static async Task MigrateTenantAsync(Tenant tenant, IServiceProvider services)
+        private static async Task MigrateTenantAsync(Tenant tenant, IServiceProvider services, ILogger logger)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             var provider = tenant.DbProvider?.ToLower() ?? "postgresql";
@@ -100,10 +117,24 @@ namespace AdministrationService.Extensions
                 services);
 
             // 1. Migrate Database cho Tenant
-            var pending = await tenantContext.Database.GetPendingMigrationsAsync();
-            if (pending.Any())
+            try
             {
-                await tenantContext.Database.MigrateAsync();
+                var pending = await tenantContext.Database.GetPendingMigrationsAsync();
+                if (pending.Any())
+                {
+                    await tenantContext.Database.MigrateAsync();
+                }
+            }
+            catch (Exception migrateEx)
+            {
+                // Check if it's "relation already exists" error (idempotent)
+                string exceptionMessage = migrateEx.ToString();
+                if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists"))
+                {
+                    // Database is already in correct state - silently skip
+                    return;
+                }
+                throw;
             }
 
             // 2. Seed dữ liệu mặc định cho Tenant

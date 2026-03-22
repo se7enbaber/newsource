@@ -1,6 +1,13 @@
-# Cấu trúc thư mục Monorepo
+## 📂 .agent (System Metadata & Specs)
 
-Tài liệu này mô tả cấu trúc thư mục và quy ước đặt tên cho các service chính trong dự án.
+Thư mục chứa cấu hình, chỉ dẫn cho AI coder, tài liệu đặc tả (specs) và thiết kế hệ thống.
+
+```
+.agent/
+├── DESIGN.md                 # Nguyên tắc thiết kế (Stitch UI principles)
+├── specs/                    # Tài liệu đặc tả kỹ thuật cho từng module (xem INDEX.md)
+└── skills/                   # Các bộ kỹ năng tùy chỉnh cho AI agent
+```
 
 ---
 

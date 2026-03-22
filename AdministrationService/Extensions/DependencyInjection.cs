@@ -21,7 +21,10 @@ namespace AdministrationService.Extensions
             
             // Jobs
             services.AddScoped<Services.Jobs.JobCleanupService>();
+            services.AddScoped<Services.Jobs.AiQuotaResetJob>();
             services.AddScoped<Services.ITenantMigrationJob, Services.TenantMigrationJob>();
+            
+            services.AddScoped<Services.IAiGovernanceService, Services.AiGovernance.AiGovernanceService>();
 
             return services;
         }

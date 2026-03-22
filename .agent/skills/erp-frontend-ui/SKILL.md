@@ -260,6 +260,19 @@ export async function GET(req: Request, { params }: { params: { path: string[] }
 
 ---
 
+## Stitch UI Design Sync (StitchMCP)
+
+**Mục tiêu:** Quản lý và đồng bộ hóa thiết kế UI của hệ thống lên nền tảng Stitch để phục vụ việc thiết kế mã nguồn, tài liệu hóa và phối hợp.
+
+- **Stitch Project:** `Mint ERP - Next.js System` (Dự án chính cho codebase này)
+- **Project ID:** `12239721184189784077`
+- **Quy trình:** Khi tạo màn hình mới (`page.tsx`), BẮT BUỘC thực hiện "vẽ" lại màn hình đó lên Stitch bằng công cụ `mcp_StitchMCP_generate_screen_from_text`.
+
+### Danh sách màn hình đã đồng bộ:
+*(Chưa có - Sẽ cập nhật sau khi thực hiện Task 2)*
+
+---
+
 ## Tham chiếu chéo (Cross-reference)
 - Multi-tenant: `mint-erp-multi-tenant` — giải thích tại sao không truyền `tenantId` từ Frontend.
 - Permission Frontend: Nếu cần ẩn/hiện UI theo Permission, cần đọc token claim để kiểm tra role — chưa có skill riêng, hỏi lại khi cần.
