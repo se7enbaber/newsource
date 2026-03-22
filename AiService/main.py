@@ -2,8 +2,12 @@ import os
 import json
 import asyncio
 import httpx
+import warnings
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
+
+# Suppress Qdrant insecure API Key warning (used in local/Docker network)
+warnings.filterwarnings("ignore", message=".*insecure connection.*")
 from pydantic import BaseModel
 from typing import List, Optional
 

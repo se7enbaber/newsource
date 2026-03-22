@@ -20,7 +20,7 @@
 | AI Governance & Monitoring | [governance-monitoring.spec.md](./ai/governance-monitoring.spec.md) | [Link](https://www.notion.so/AI-Governance-Monitoring-Spec-32bf1e6a215c81dca2c3ebefb095b0f4) | AI-Service | draft |
 | Kiến trúc hạ tầng AI | [infrastructure.spec.md](./ai/infrastructure.spec.md) | [Link](https://www.notion.so/AI-Infrastructure-Spec-32bf1e6a215c81c5bd2acd410a9f226f) | AiService | active |
 | Lộ trình phát triển | [roadmap.spec.md](./roadmap.spec.md) | Toàn hệ thống | planned |
-| [BUG] AI Proxy Exception | [bug-proxy-exception.md](./ai/bug-proxy-exception.md) | - | AiService | fixed |
+| [BUG] AI Proxy Exception | [bug-proxy-exception.md](./ai/bug-proxy-exception.md) | [Link](https://www.notion.so/BUG-Analysis-Proxy-Exception-AI-Chat-32bf1e6a215c81789496fdbfb7ff2faa) | AiService | fixed |
 | **Thiết kế & UX** | [DESIGN.md](../DESIGN.md) | Frontend | stable |
 
 ## 📚 Tri thức nghiệp vụ (KIs)
