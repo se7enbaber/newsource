@@ -24,7 +24,7 @@ Khi nhận được yêu cầu, hãy tuân thủ quy trình sau:
     - Lập Checklist thực hiện chi tiết.
 4. **Xác nhận**: Đợi người dùng kiểm tra, chỉnh sửa và **Confirm**.
 5. **Thực thi**: Chỉ bắt đầu code sau khi nhận được sự xác nhận.
-6. **Hoàn tất (CỰC KỲ QUAN TRỌNG)**: Sau khi hoàn thành code và verify, BẮT BUỘC cập nhật lại **TẤT CẢ** tài liệu liên quan bao gồm: spec chính, file `INDEX.md`, `STRUCTURE.md`, và bất kỳ specs nào khác bị ảnh hưởng bởi thay đổi này để đảm bảo tài liệu luôn khớp với codebase. Đối với các Bug fix hoặc tài liệu kỹ thuật, LUÔN cập nhật ngày phát hiện và ngày xử lý để theo dõi.
+6. **Hoàn tất (CỰC KỲ QUAN TRỌNG)**: Sau khi hoàn thành code và verify, BẮT BUỘC cập nhật lại **TẤT CẢ** tài liệu liên quan bao gồm: spec chính, file `INDEX.md`, `STRUCTURE.md`, và bất kỳ specs nào khác bị ảnh hưởng bởi thay đổi này để đảm bảo tài liệu luôn khớp với codebase. Sau đó, **ĐỒNG BỘ** nội dung này lên Notion tương ứng (tra cứu link tại `INDEX.md`). Đối với các Bug fix hoặc tài liệu kỹ thuật, LUÔN cập nhật ngày phát hiện và ngày xử lý để theo dõi.
 
 ---
 

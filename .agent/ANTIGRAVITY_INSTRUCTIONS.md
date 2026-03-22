@@ -78,6 +78,7 @@ Với mọi yêu cầu, bạn **phải** thực hiện theo đúng thứ tự sa
 
 ### Bước 7 — Finishing
 - Verify toàn bộ tests pass (chạy fresh, không dùng cached results)
+- **Sync Documentation**: Cập nhật file `.md` local tương ứng -> Đồng bộ nội dung lên trang Notion liên quan (sử dụng Notion MCP tool) -> Verify link Notion hoạt động.
 - Trình bày **4 options** cho user:
   1. Merge locally
   2. Create Pull Request
