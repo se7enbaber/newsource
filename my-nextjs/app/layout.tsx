@@ -8,6 +8,7 @@ import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { PermissionProvider } from '@/lib/PermissionProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { NotificationProvider } from '@/lib/NotificationProvider';
+import { AiProvider } from '@/lib/AiProvider';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin', 'vietnamese'] });
 
@@ -21,9 +22,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeProvider>
               <PermissionProvider>
                 <NotificationProvider>
-                  <AppLayout>
-                    {children}
-                  </AppLayout>
+                  <AiProvider>
+                    <AppLayout>
+                      {children}
+                    </AppLayout>
+                  </AiProvider>
                 </NotificationProvider>
               </PermissionProvider>
             </ThemeProvider>

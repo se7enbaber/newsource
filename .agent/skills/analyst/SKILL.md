@@ -19,6 +19,7 @@ Khi nhận được yêu cầu, hãy tuân thủ quy trình sau:
     - Quy tắc đặt tên file:
         - Nếu là Bug fix: `bug-{tên-vấn-đề}.md`
         - Nếu là Feature/Change Request: `{tên-tính-năng}.md`
+    - **Đặc biệt với Roadmap**: Khi được yêu cầu mở rộng Roadmap hoặc bổ sung tính năng mới, BẮT BUỘC sử dụng công cụ tìm kiếm (`search_web`) kết hợp với skill `erp-product-advisor` để tìm hiểu các tính năng mà người dùng ERP (End-users) đang quan tâm và sử dụng nhiều nhất trên thị trường hiện nay (VD: dashboard cá nhân hóa, automation, collaboration tools...).
     - Thiết kế Flow: Vẽ sơ đồ (Mermaid) và đính kèm hình ảnh giao diện mock-up nếu cần.
     - Lập Checklist thực hiện chi tiết.
 4. **Xác nhận**: Đợi người dùng kiểm tra, chỉnh sửa và **Confirm**.

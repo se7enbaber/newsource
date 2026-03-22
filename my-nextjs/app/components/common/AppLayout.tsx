@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { AppFloatButton } from './AppFloatButton';
 import AuthWrapper from '../AuthWrapper';
 
+import { BusinessChatWidget } from '../ai/BusinessChatWidget';
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
@@ -25,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <main style={{ padding: isLoginPage ? 0 : '0 16px 32px', minHeight: 'calc(100vh - 120px)' }}>
                         {children}
                         <AppFloatButton />
+                        {!isLoginPage && <BusinessChatWidget />}
                     </main>
                 </Layout>
             </Layout>

@@ -1,35 +1,47 @@
 import os
 from dotenv import load_dotenv
-from langchain_community.document_loaders import DirectoryLoader, UnstructuredMarkdownLoader
-from langchain.text_splitter import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.vectorstores import Qdrant
+from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 # Load environment variables
-load_dotenv()
+# Try to load env from current folder, then parent
+if not load_dotenv():
+    load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION_NAME", "business_knowledge")
+
+def get_knowledge_documents():
+    """
+    Load markdown documents from the knowledge directory.
+    """
+    knowledge_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.agent/specs/ai/knowledge/business/"))
+    if not os.path.exists(knowledge_path):
+        print(f"⚠️ Knowledge path not found: {knowledge_path}")
+        return []
+        
+    loader = DirectoryLoader(knowledge_path, glob="*.md", loader_cls=TextLoader)
+    return loader.load()
 
 def ingest_knowledge(tenant_id: str = "system"):
     """
     Script to read .md files from knowledge directory and push to Vector DB with tenant_id tagging.
     """
-    knowledge_path = os.path.abspath("../.agent/specs/ai/knowledge/business/")
     print(f"--- Ingesting knowledge for Tenant: {tenant_id} ---")
-    print(f"Scanning documents from: {knowledge_path}")
     
     if not GOOGLE_API_KEY:
         print("❌ ERROR: GOOGLE_API_KEY is not set in .env")
         return
 
     # 1. Load Markdown Files
-    loader = DirectoryLoader(knowledge_path, glob="*.md", loader_cls=UnstructuredMarkdownLoader)
-    documents = loader.load()
+    documents = get_knowledge_documents()
     
     if not documents:
         print("⚠️ No documents found to ingest.")
@@ -44,8 +56,8 @@ def ingest_knowledge(tenant_id: str = "system"):
     ]
     
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=100,
+        chunk_size=800,
+        chunk_overlap=150,
         add_start_index=True
     )
     
@@ -61,32 +73,17 @@ def ingest_knowledge(tenant_id: str = "system"):
     print(f"Created {len(final_docs)} chunks from {len(documents)} documents.")
 
     # 3. Setup Gemini Embeddings
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=GOOGLE_API_KEY)
 
     # 4. Store in Qdrant
     try:
-        # Initialize client to check/create collection first
-        client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
-        
-        # Create collection if not exists
-        collections = client.get_collections()
-        collection_names = [c.name for c in collections.collections]
-        
-        if QDRANT_COLLECTION not in collection_names:
-            print(f"Creating new collection: {QDRANT_COLLECTION}")
-            client.create_collection(
-                collection_name=QDRANT_COLLECTION,
-                vectors_config=models.VectorParams(size=768, distance=models.Distance.COSINE),
-            )
-
-        # Bulk upload
-        Qdrant.from_documents(
-            final_docs,
-            embeddings,
-            location=QDRANT_HOST,
-            port=QDRANT_PORT,
-            collection_name=QDRANT_COLLECTION,
-            prefer_grpc=False
+        # Simple ingestion
+        QdrantVectorStore.from_documents(
+            documents=final_docs,
+            embedding=embeddings,
+            url=f"http://{QDRANT_HOST}:{QDRANT_PORT}",
+            api_key=QDRANT_API_KEY,
+            collection_name=QDRANT_COLLECTION
         )
         print(f"✅ SUCCESSFULLY ingested {len(final_docs)} chunks into Qdrant collection '{QDRANT_COLLECTION}'.")
         

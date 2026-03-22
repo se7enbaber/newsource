@@ -14,7 +14,11 @@
 5. **Clean Up**: Always delete unused `.log` and `.txt` files after completing a task to keep the workspace clean.
 
 ## Current Priorities
-- [List current priorities here]
+- [x] Giai đoạn 1 & 2: Hạ tầng & Backend AI Service (RAG).
+- [x] Giai đoạn 3: Frontend Business Notebook (Next.js components).
+- [x] Bảo trì & Cập nhật tri thức nghiệp vụ (Giai đoạn 4).
+- [x] Tối ưu hoá AI Service - Cache/Hybrid/Re-rank (Giai đoạn 5).
+- [x] Quản trị & Giám sát AI (Giai đoạn 6 - Token & Cost).
 
 ## Tech Stack
 - **Backend**: .NET / C#

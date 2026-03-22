@@ -4,9 +4,15 @@ langchain==0.2.16
 langchain-community==0.2.16
 langchain-google-genai==1.0.10
 python-dotenv
-qdrant-client
+langchain-qdrant
 pypdf
 unstructured
 markdown
 google-generativeai
 tiktoken
+redis
+langchain-redis
+rank-bm25
+cohere
+langchain-cohere
+httpx

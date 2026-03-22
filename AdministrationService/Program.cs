@@ -293,6 +293,16 @@ app.UseCors("AllowAll");
 
 await app.ApplyMigrationsAsync();
 
+// Register Recurring Jobs
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    recurringJobManager.AddOrUpdate<AdministrationService.Services.Jobs.AiQuotaResetJob>(
+        "ai-quota-reset",
+        job => job.ExecuteAsync(),
+        Cron.Monthly(1, 0, 0)); // Day 1 of month at 00:00
+}
+
 app.Run();
 
 // ========== Helper Classes ==========

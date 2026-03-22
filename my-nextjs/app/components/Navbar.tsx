@@ -15,7 +15,8 @@ import {
     LogoutOutlined,
     KeyOutlined,
     IdcardOutlined,
-    DownOutlined
+    DownOutlined,
+    ThunderboltOutlined
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -109,6 +110,11 @@ const Navbar: React.FC = () => {
                         icon: <SettingOutlined style={{ fontSize: 16 }} />,
                         label: t('menu_system_config', 'Cấu hình Hệ thống'),
                         hostOnly: true
+                    },
+                    {
+                        key: '/administration/ai-governance',
+                        icon: <ThunderboltOutlined style={{ fontSize: 16 }} />,
+                        label: t('menu_ai_governance', 'Quản trị AI'),
                     },
                 ],
             },

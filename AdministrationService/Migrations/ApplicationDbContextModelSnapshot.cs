@@ -22,6 +22,112 @@ namespace AdministrationService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AdministrationService.Infrastructure.Model.AiQuota", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CurrentUsedCostUsd")
+                        .HasColumnType("numeric");
+
+                    b.Property<long>("CurrentUsedTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastResetDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("MonthlyCostLimitUsd")
+                        .HasColumnType("numeric");
+
+                    b.Property<long>("MonthlyTokenLimit")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ADMIN_AiQuotas", (string)null);
+                });
+
+            modelBuilder.Entity("AdministrationService.Infrastructure.Model.AiUsageLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CompletionTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("EstimatedCostUsd")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("PromptTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("TotalTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UpdatedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ADMIN_AiUsageLogs", (string)null);
+                });
+
             modelBuilder.Entity("AdministrationService.Infrastructure.Model.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -651,6 +757,17 @@ namespace AdministrationService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ADMIN_JobLogs", (string)null);
+                });
+
+            modelBuilder.Entity("AdministrationService.Infrastructure.Model.AiQuota", b =>
+                {
+                    b.HasOne("AdministrationService.Infrastructure.Model.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("AdministrationService.Infrastructure.Model.TenantFeature", b =>

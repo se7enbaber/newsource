@@ -42,6 +42,7 @@ builder.Services.AddMinio(config =>
 });
 
 // ── Services ──────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
 builder.Services.AddCommonHealthChecks("FileService");
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 
@@ -76,7 +77,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseSerilogRequestLogging();
-app.MapCommonHealthChecks();
 app.MapControllers();
 
 app.Run();

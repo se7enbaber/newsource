@@ -219,5 +219,19 @@
     "dash_used_memory_caps": "BỘ NHỚ ĐÃ DÙNG",
     "dash_peak_memory_caps": "BỘ NHỚ ĐỈNH ĐIỂM",
     "dash_cpu_usage_caps": "SỬ DỤNG CPU",
-    "dash_connected_clients_caps": "KẾT NỐI KHÁCH HÀNG"
+    "dash_connected_clients_caps": "KẾT NỐI KHÁCH HÀNG",
+    "ai_assistant_title": "Trợ lý Nghiệp vụ AI",
+    "ai_chat_placeholder": "Hỏi tôi về quy trình nghiệp vụ...",
+    "ai_welcome_title": "Xin chào! Tôi có thể giúp gì cho bạn?",
+    "ai_welcome_subtitle": "Tôi là chuyên gia về quy trình nghiệp vụ ERP. Hãy đặt câu hỏi để bắt đầu.",
+    "ai_suggest_1": "Quy trình bán hàng gồm những bước nào?",
+    "ai_suggest_2": "Làm sao để tạo một khách hàng (Tenant) mới?",
+    "ai_suggest_3": "Chính sách bảo mật hệ thống là gì?",
+    "ai_suggest_4": "Hướng dẫn quản lý kho (Inventory)?",
+    "clear_history": "Xóa lịch sử",
+    "ai_knowledge_only": "Chỉ tri thức nghiệp vụ",
+    "ai_shift_enter_hint": "Shift + Enter để xuống dòng",
+    "ai_re_ingest": "Nạp lại tri thức (Admin)",
+    "ai_ingest_success": "Đã nạp lại bộ tri thức thành công!",
+    "ai_ingest_error": "Lỗi khi nạp lại tri thức"
 }

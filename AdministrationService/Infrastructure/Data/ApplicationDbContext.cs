@@ -25,12 +25,25 @@ namespace AdministrationService.Infrastructure.Data
         public DbSet<Tenant> Tenants => Set<Tenant>();
         public DbSet<TenantFeature> TenantFeatures => Set<TenantFeature>();
         public DbSet<JobLog> JobLogs => Set<JobLog>();
-
+        public DbSet<AiUsageLog> AiUsageLogs => Set<AiUsageLog>();
+        public DbSet<AiQuota> AiQuotas => Set<AiQuota>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.UseOpenIddict(); // Quan trọng: Tích hợp các bảng OIDC
+            modelBuilder.UseOpenIddict();
+
+            // Tables renaming and multi-tenant configuration
+            modelBuilder.Entity<AiUsageLog>().ToTable($"{AppConstants.PrefixTable}AiUsageLogs");
+            modelBuilder.Entity<AiQuota>().ToTable($"{AppConstants.PrefixTable}AiQuotas");
+
+            modelBuilder.Entity<AiUsageLog>().HasQueryFilter(u => u.TenantId == _tenantService.TenantId);
+            modelBuilder.Entity<AiQuota>().HasQueryFilter(q => q.TenantId == _tenantService.TenantId);
+
+            modelBuilder.Entity<AiQuota>()
+                .HasOne(q => q.Tenant)
+                .WithMany()
+                .HasForeignKey(q => q.TenantId);
 
             // Đổi tên các bảng Identity
             modelBuilder.Entity<ApplicationUser>().ToTable($"{AppConstants.PrefixTable}Users");
