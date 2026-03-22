@@ -117,7 +117,49 @@ namespace AdministrationService.Services
 
                 _logger.LogInformation("Applying migrations for tenant {TenantName}...", tenant.Name);
                 performContext.WriteLine("Applying migrations for tenant {0}...", tenant.Name);
-                await context.Database.MigrateAsync();
+                
+                try
+                {
+                    await context.Database.MigrateAsync();
+                }
+                catch (Exception migrateEx)
+                {
+                    string exceptionMessage = migrateEx.ToString();
+                    if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists") || exceptionMessage.Contains("23505"))
+                    {
+                        _logger.LogWarning("Migration exception (idempotent) for tenant {TenantName}. Attempting history sync...", tenant.Name);
+                        performContext.SetTextColor(ConsoleTextColor.Yellow);
+                        performContext.WriteLine("Warning: Tables already exist. Syncing EF history for Initial migration...");
+                        
+                        // Thông báo cho UI biết đang xử lý sự cố nhỏ
+                        await _signalRService.SendJobStatusAsync(tenantId, jobLog.JobId, "Running", "Phát hiện DB đã tồn tại, đang đồng bộ lịch sửa migration...");
+                        if (callerTenantId.HasValue && callerTenantId != tenantId)
+                        {
+                            await _signalRService.SendJobStatusAsync(callerTenantId.Value, jobLog.JobId, "Running", "Phát hiện DB đã tồn tại, đang đồng bộ lịch sửa migration...");
+                        }
+
+                        try 
+                        {
+                            var sqlPostgres = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('20260315074500_Initial', '10.0.3') ON CONFLICT DO NOTHING;";
+                            var sqlOther = "IF NOT EXISTS(SELECT 1 FROM __EFMigrationsHistory WHERE MigrationId = '20260315074500_Initial') INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20260315074500_Initial', '10.0.3');";
+                            var sql = provider == "postgresql" ? sqlPostgres : sqlOther;
+                            
+                            await context.Database.ExecuteSqlRawAsync(sql);
+                            
+                            // Chạy lại migrate để apply các migration sau Initial (nếu có)
+                            await context.Database.MigrateAsync();
+                        }
+                        catch (Exception ex) 
+                        {
+                            _logger.LogWarning(ex, "Failed to sync EF history or apply subsequent migrations for {TenantName}", tenant.Name);
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
 
                 _logger.LogInformation("Seeding initial data for tenant {TenantName}...", tenant.Name);
                 performContext.WriteLine("Seeding initial data for tenant {0}...", tenant.Name);

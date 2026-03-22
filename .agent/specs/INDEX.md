@@ -11,7 +11,7 @@
 | Quyền hạn (Roles) | [roles.spec.md](./roles/roles.spec.md) | - | AdministrationService | stable |
 | Tổ chức (Tenants) | [tenants.spec.md](./tenants/tenants.spec.md) | [Link](https://www.notion.so/Tenants-Management-Spec-32bf1e6a215c81eb9678f495970a1ba3) | AdministrationService | stable |
 | Gói tính năng (Features) | [tenants-features.spec.md](./tenants/tenants-features.spec.md) | - | AdministrationService | stable |
-| Migrations | [tenants-migration.spec.md](./tenants/tenants-migration.spec.md) | - | AdministrationService | stable |
+| Migrations | [tenants-migration.spec.md](./tenants/tenants-migration.spec.md) | [Link](https://www.notion.so/Tenants-Migration-Spec-32bf1e6a215c8134a13ce9c523a65412) | AdministrationService | stable |
 | Hangfire (Redis Storage) | [hangfire-redis.spec.md](./administration/hangfire-redis.spec.md) | AdministrationService | active |
 | [BUG] Hangfire abstract/interface job activation | [bug-hangfire-abstract-job.spec.md](./administration/bug-hangfire-abstract-job.spec.md) | - | AdministrationService | fixed |
 | [BUG] 500 Internal Server (SignalR) | [bug-500-signalr-circuit-breaker.spec.md](./administration/bug-500-signalr-circuit-breaker.spec.md) | [Link](https://www.notion.so/BUG-Analysis-500-Internal-Server-Error-SignalR-32bf1e6a215c816da32de96f10b29263) | AdministrationService | fixed |
@@ -20,6 +20,7 @@
 | AI Governance & Monitoring | [governance-monitoring.spec.md](./ai/governance-monitoring.spec.md) | [Link](https://www.notion.so/AI-Governance-Monitoring-Spec-32bf1e6a215c81dca2c3ebefb095b0f4) | AI-Service | draft |
 | Kiến trúc hạ tầng AI | [infrastructure.spec.md](./ai/infrastructure.spec.md) | [Link](https://www.notion.so/AI-Infrastructure-Spec-32bf1e6a215c81c5bd2acd410a9f226f) | AiService | active |
 | Lộ trình phát triển | [roadmap.spec.md](./roadmap.spec.md) | Toàn hệ thống | planned |
+| [BUG] AI Proxy Exception | [bug-proxy-exception.md](./ai/bug-proxy-exception.md) | - | AiService | fixed |
 | **Thiết kế & UX** | [DESIGN.md](../DESIGN.md) | Frontend | stable |
 
 ## 📚 Tri thức nghiệp vụ (KIs)

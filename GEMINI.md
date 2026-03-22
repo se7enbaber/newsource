@@ -13,7 +13,7 @@
 4. **Mandatory Analysis**: Always apply the `erp-analyst` skill to analyze and confirm requirements before starting code implementation, particularly for Next.js tasks.
 5. **PM Assistant Workflow**: Luôn tuân thủ quy trình tại [.agent/workflows/pm-assistant.md](file:///d:/App/Project/.agent/workflows/pm-assistant.md) khi tiếp nhận yêu cầu mới.
 6. **Clean Up**: Always delete unused `.log` and `.txt` files after completing a task to keep the workspace clean.
-7. **Notion & Document Sync**: LUÔN cập nhật tài liệu `.md` (specs, designs, knowledge) tại `.agent/` ngay khi có thay đổi logic/tính năng. Sau đó, ĐỒNG BỘ nội dung này lên trang Notion tương ứng (tra cứu link mapping tại `.agent/specs/INDEX.md`). **Không báo "Done" nếu chưa hoàn thành bước này.**
+7. **Notion & Document Sync**: LUÔN cập nhật tài liệu `.md` (specs, designs, knowledge) tại `.agent/` ngay khi có thay đổi logic/tính năng. BẮT BUỘC ghi rõ **ngày tháng update** vào file `.md` cũng như khi đồng bộ lên Notion để lưu vết. Sau đó, ĐỒNG BỘ nội dung này lên trang Notion tương ứng (tra cứu link mapping tại `.agent/specs/INDEX.md`). **Không báo "Done" nếu chưa hoàn thành bước này.**
 
 ## Current Priorities
 - [x] Giai đoạn 1 & 2: Hạ tầng & Backend AI Service (RAG).
@@ -26,3 +26,8 @@
 - **Backend**: .NET / C#
 - **Frontend**: Next.js / TypeScript
 - **Infrastructure**: Docker, SignalR, Hangfire, Redis
+
+## Known Issues & Resolved Bugs
+- **[Resolved] 2026-03-22 - Tenant Migration Idempotency:** Quá trình Hangfire job migration cho Tenants báo lỗi `relation "ADMIN_Tenants" already exists` (SQL Code `42P07`) nếu CSDL đã có dữ liệu trước. Đã cấu trúc lại `TenantMigrationJob.cs` và `MigrationExtensions.cs` để tự động chèn record vào `__EFMigrationsHistory` và chạy tiếp các scripts mới thay vì throw lỗi làm đứt sequence.
+- **[Resolved] 2026-03-22 - AiGovernanceService build error:** Lỗi biên dịch do bất đồng nhất tham số và tên method giữa Interface `IAiGovernanceService` (`UpdateQuotaAsync`, `IsQuotaExceededAsync`) và class implement. Đã tiến hành mapping lại param cho đồng nhất.
+- **[Resolved] 2026-03-22 - SignalR Circuit Breaker:** Lỗi `The circuit is now open` và `Connection refused` do port không nhất quán giữa Dockerfile (10000) và docker-compose/AdminService (8080). Đã đồng bộ tất cả về port 8080 và tăng khả năng phục hồi của resilience policy.

@@ -32,13 +32,13 @@ RUN apk add --no-cache curl
 COPY --from=build /app/FileService .
 
 USER guest
-EXPOSE 10000
-ENV PORT=10000 \
-    ASPNETCORE_URLS=http://+:10000 \
+EXPOSE 8080
+ENV PORT=8080 \
+    ASPNETCORE_URLS=http://+:8080 \
     ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_RUNNING_IN_CONTAINER=true
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:10000/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["./FileService"]

@@ -81,7 +81,7 @@ namespace AdministrationService.Services.AiGovernance
                 .FirstOrDefaultAsync(q => q.TenantId == tenantId);
         }
 
-        public async Task<bool> IsBlockedAsync(Guid tenantId)
+        public async Task<bool> IsQuotaExceededAsync(Guid tenantId)
         {
             return await _context.AiQuotas
                 .IgnoreQueryFilters()
@@ -90,7 +90,7 @@ namespace AdministrationService.Services.AiGovernance
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateQuotaLimitsAsync(Guid tenantId, long maxTokens, decimal maxCostUsd)
+        public async Task<AiQuota> UpdateQuotaAsync(Guid tenantId, long? newTokenLimit, decimal? newCostLimit)
         {
             var quota = await _context.AiQuotas
                 .IgnoreQueryFilters()
@@ -98,20 +98,29 @@ namespace AdministrationService.Services.AiGovernance
 
             if (quota == null)
             {
-                quota = new AiQuota { TenantId = tenantId };
+                quota = new AiQuota 
+                { 
+                    TenantId = tenantId,
+                    MonthlyTokenLimit = 1000000,
+                    MonthlyCostLimitUsd = 10.0m
+                };
                 _context.AiQuotas.Add(quota);
             }
 
-            quota.MonthlyTokenLimit = maxTokens;
-            quota.MonthlyCostLimitUsd = maxCostUsd;
+            if (newTokenLimit.HasValue)
+                quota.MonthlyTokenLimit = newTokenLimit.Value;
+                
+            if (newCostLimit.HasValue)
+                quota.MonthlyCostLimitUsd = newCostLimit.Value;
             
             // Auto unblock if limits increase
-            if ((double)quota.CurrentUsedTokens / quota.MonthlyTokenLimit < 1.0)
+            if (quota.MonthlyTokenLimit > 0 && (double)quota.CurrentUsedTokens / quota.MonthlyTokenLimit < 1.0)
             {
                 quota.IsBlocked = false;
             }
 
             await _context.SaveChangesAsync();
+            return quota;
         }
 
         public async Task ResetQuotasAsync()

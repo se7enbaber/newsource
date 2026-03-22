@@ -45,8 +45,9 @@ export async function POST(request: NextRequest) {
         };
 
         // 3. Gọi sang AiService
-        // Sử dụng tên service trong docker-compose network
-        const aiServiceUrl = process.env.AI_SERVICE_URL || 'http://ai-service:8000/chat';
+        // Sử dụng AI_SERVICE_BASE_URL để linh hoạt giữa môi trường local và docker
+        const aiServiceBaseUrl = process.env.AI_SERVICE_BASE_URL || 'http://ai-service:8000';
+        const aiServiceUrl = `${aiServiceBaseUrl}/chat`;
         
         console.log(`[AI Proxy] Forwarding message from Tenant ${effectiveTenantId} to ${aiServiceUrl}`);
 

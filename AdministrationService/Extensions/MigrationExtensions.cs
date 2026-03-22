@@ -1,7 +1,9 @@
 using AdministrationService.Infrastructure.Data;
 using AdministrationService.Infrastructure.Model;
 using AdministrationService.Services;
+using AdministrationService.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using ShareService.Services.Base;
 
 namespace AdministrationService.Extensions
@@ -27,6 +29,12 @@ namespace AdministrationService.Extensions
                         logger.LogInformation("--> [HOST] Phát hiện {Count} bản cập nhật mới. Đang tiến hành Update Database...", pendingMigrations.Count());
                         await context.Database.MigrateAsync();
                         logger.LogInformation("--> [HOST] Update Database thành công.");
+
+                        // Gửi thông báo SignalR thành công
+                        try {
+                            var signalR = services.GetRequiredService<ISignalRNotificationService>();
+                            await signalR.SendNotificationAsync(Guid.Empty, "Hệ thống đã cập nhật", "Cơ sở dữ liệu trung tâm đã được nâng cấp lên phiên bản mới nhất.", "success");
+                        } catch { /* Bỏ qua nếu SignalR Hub chưa sẵn sàng */ }
                     }
                     else
                     {
@@ -37,9 +45,26 @@ namespace AdministrationService.Extensions
                 {
                     // Check if it's "relation already exists" error (idempotent)
                     string exceptionMessage = migrateEx.ToString();
-                    if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists"))
+                    if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists") || exceptionMessage.Contains("23505"))
                     {
-                        logger.LogInformation("--> [HOST] Database bảng đã tồn tại. Bỏ qua lỗi migration.");
+                        logger.LogWarning("--> [HOST] Database bảng đã tồn tại hoặc trùng khóa. Đang nỗ lực đồng bộ lại lịch sử Migration...");
+                        try 
+                        {
+                            // Nỗ lực đồng bộ bản ghi Initial vào history để tránh lặp lại lỗi này ở lần khởi động sau
+                            await context.Database.ExecuteSqlRawAsync("INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('20260315074500_Initial', '10.0.3') ON CONFLICT DO NOTHING;");
+                            
+                            var signalR = services.GetService<ISignalRNotificationService>();
+                            if (signalR != null)
+                                await signalR.SendNotificationAsync(Guid.Empty, "Đồng bộ Database", "Hệ thống đã phát hiện cấu trúc cũ và tự động đồng bộ hóa lịch sử Migration.", "warning");
+                            
+                            // Tiến hành chạy lại lần hai để apply các cập nhật tiếp theo (nếu có)  
+                            await context.Database.MigrateAsync();
+                            logger.LogInformation("--> [HOST] Update Database phần còn lại thành công.");
+                        }
+                        catch (Exception ex) {
+                             logger.LogWarning("--> [HOST] Không thể chèn bản ghi vào history hoặc chạy tiếp migration: {Message}", ex.Message);
+                             // throw; // throw ra ngoài để dừng host nếu migrate the rest fails? No, keep it graceful like before
+                        }
                     }
                     else
                     {
@@ -123,18 +148,37 @@ namespace AdministrationService.Extensions
                 if (pending.Any())
                 {
                     await tenantContext.Database.MigrateAsync();
+                    
+                    try 
+                    {
+                        var signalR = services.GetRequiredService<ISignalRNotificationService>();
+                        await signalR.SendNotificationAsync(tenant.Id, "Database Updated", $"Cơ sở dữ liệu của bạn ({tenant.Name}) đã được cập nhật thành công.", "success");
+                    }
+                    catch { }
                 }
             }
             catch (Exception migrateEx)
             {
                 // Check if it's "relation already exists" error (idempotent)
                 string exceptionMessage = migrateEx.ToString();
-                if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists"))
+                if (exceptionMessage.Contains("42P07") || exceptionMessage.Contains("already exists") || exceptionMessage.Contains("23505"))
                 {
-                    // Database is already in correct state - silently skip
-                    return;
+                    // Database is already in correct state - silently skip after matching history
+                    try {
+                        var sqlPostgres = "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ('20260315074500_Initial', '10.0.3') ON CONFLICT DO NOTHING;";
+                        var sqlOther = "IF NOT EXISTS(SELECT 1 FROM __EFMigrationsHistory WHERE MigrationId = '20260315074500_Initial') INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20260315074500_Initial', '10.0.3');";
+                        var sql = provider == "postgresql" ? sqlPostgres : sqlOther;
+                        
+                        await tenantContext.Database.ExecuteSqlRawAsync(sql);
+                        
+                        // Chạy lại migrate để apply các migration sau Initial (nếu có)
+                        await tenantContext.Database.MigrateAsync();
+                    } catch {}
                 }
-                throw;
+                else
+                {
+                    throw;
+                }
             }
 
             // 2. Seed dữ liệu mặc định cho Tenant

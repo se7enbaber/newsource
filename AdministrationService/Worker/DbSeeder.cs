@@ -13,22 +13,8 @@ public class DbSeeder(IServiceScopeFactory scopeFactory, IConfiguration configur
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<DbSeeder>>();
         
-        // 1. Tạo DB và chạy Migration TRUỚC KHI resolve các service khác có thể truy vấn DB
-        try
-        {
-            await context.Database.MigrateAsync(ct);
-        }
-        catch (Exception migrateEx)
-        {
-            // Check if it's "relation already exists" error (idempotent)
-            string exceptionMessage = migrateEx.ToString();
-            if (!exceptionMessage.Contains("42P07") && !exceptionMessage.Contains("already exists"))
-            {
-                logger.LogError(migrateEx, "Lỗi không mong muốn khi cập nhật database.");
-                throw;
-            }
-            logger.LogInformation("Database bảng đã tồn tại. Bỏ qua lỗi migration.");
-        }
+        // 1. Database migration is now handled globally in Program.cs (ApplyMigrationsAsync)
+        // This avoids race conditions and double migration attempts.
 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();

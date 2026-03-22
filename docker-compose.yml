@@ -180,10 +180,10 @@ services:
     container_name: erp-file-service
     restart: unless-stopped
     ports:
-      - "10001:8000"
+      - "10001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8000
+      - ASPNETCORE_URLS=http://+:8080
       - MinIO__Endpoint=minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
@@ -302,6 +302,7 @@ services:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_ADMIN_URL=/api/proxy
       - BACKEND_URL=http://gateway:8080
+      - AI_SERVICE_BASE_URL=http://ai-service:8000
       - NEXT_PUBLIC_SIGNALR_URL=http://localhost:${SIGNALR_HOST_PORT}/notificationHub
     depends_on:
       - gateway

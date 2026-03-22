@@ -187,7 +187,7 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient("SignalRService", client =>
 {
     var isContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
-    var defaultUrl = isContainer ? "http://signalr:10000" : "http://localhost:5003";
+    var defaultUrl = isContainer ? "http://signalr:8080" : "http://localhost:5003";
     var baseUrl = builder.Configuration["SignalRService:BaseUrl"] ?? defaultUrl;
     client.BaseAddress = new Uri(baseUrl);
 })
@@ -195,8 +195,8 @@ builder.Services.AddHttpClient("SignalRService", client =>
 {
     var signalRConfig = builder.Configuration.GetSection("SignalRService");
 
-    // 1. Retry 3 lần với exponential backoff
-    options.Retry.MaxRetryAttempts = signalRConfig.GetValue("RetryCount", 3);
+    // 1. Retry nhiều lần hơn với exponential backoff (mặc định 5 lần nếu không cấu hình)
+    options.Retry.MaxRetryAttempts = signalRConfig.GetValue("RetryCount", 5);
     options.Retry.BackoffType = DelayBackoffType.Exponential;
     options.Retry.Delay = TimeSpan.FromSeconds(2);
     options.Retry.OnRetry = args =>
@@ -207,11 +207,11 @@ builder.Services.AddHttpClient("SignalRService", client =>
         return default;
     };
 
-    // 2. Circuit breaker mở sau 5 lần fail liên tiếp
-    options.CircuitBreaker.MinimumThroughput = signalRConfig.GetValue("CircuitBreakerThreshold", 5);
-    options.CircuitBreaker.FailureRatio = 1.0; 
-    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
-    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    // 2. Circuit breaker: nới lỏng ngưỡng để tránh mở quá sớm trong lúc khởi động
+    options.CircuitBreaker.MinimumThroughput = signalRConfig.GetValue("CircuitBreakerThreshold", 10);
+    options.CircuitBreaker.FailureRatio = 1.0; // Chỉ mở nếu 100% request trong cửa sổ bị fail
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+    options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
     options.CircuitBreaker.OnOpened = args =>
     {
         Log.ForContext("SourceContext", "SignalRService")
