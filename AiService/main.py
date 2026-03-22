@@ -21,6 +21,7 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever, ContextualCompressionRetriever
 from langchain_cohere import CohereRerank
 from qdrant_client import QdrantClient
+from qdrant_client.http import models
 import redis
 
 # Try to load env from current folder, then parent
@@ -176,7 +177,17 @@ async def chat(request: ChatRequest):
         )
 
         vector_retriever = vector_store.as_retriever(
-            search_kwargs={"filter": {"tenant_id": request.tenant_id}, "k": 10}
+            search_kwargs={
+                "filter": models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="metadata.tenant_id", 
+                            match=models.MatchValue(value=request.tenant_id)
+                        )
+                    ]
+                ), 
+                "k": 10
+            }
         )
         
         final_retriever = vector_retriever
