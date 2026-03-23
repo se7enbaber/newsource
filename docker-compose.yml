@@ -46,12 +46,13 @@ services:
           memory: 512M
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     container_name: erp-redis
     restart: unless-stopped
     ports:
       - "${REDIS_HOST_PORT}:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_ARGS=--requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
     networks:

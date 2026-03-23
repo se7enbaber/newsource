@@ -10,8 +10,8 @@ unstructured
 markdown
 google-generativeai
 tiktoken
-redis
-langchain-redis
+redis==5.2.1
+redisvl
 rank-bm25
 cohere
 langchain-cohere
