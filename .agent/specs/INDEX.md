@@ -1,6 +1,7 @@
 # Spec Index
 
-> **Cập nhật lần cuối:** 2026-03-23  
+> **Cập nhật lần cuối:** 2026-03-25
+> **Spec Template:** Tất cả file `.spec.md` tuân theo chuẩn thống nhất — xem skill `erp-analyst` để biết template đầy đủ.
 > Tra cứu link Notion tại đây trước khi đồng bộ tài liệu. Mỗi entry phải có Notion link hoặc `-` nếu chưa tạo.
 
 ## 🤖 Agent & Workflow

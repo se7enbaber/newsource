@@ -6,202 +6,204 @@ description: Dùng khi người dùng đưa ra yêu cầu mới, mô tả vấn 
 <!--
 Notion: https://www.notion.so/Agent-Workflow-Analysis-Process-32cf1e6a215c8131bf23d0bc01eddad3
 Ngày tạo: 2026-03-23
-Cập nhật lần cuối: 2026-03-23
+Cập nhật lần cuối: 2026-03-25
 -->
 
-# Analyst — Phân tích Yêu cầu Trước Khi Code
+# ERP Analyst — Phân tích Yêu cầu & Tài liệu hóa
 
 ## Nguyên tắc cốt lõi
-Không bao giờ đề xuất giải pháp kỹ thuật khi chưa hiểu rõ vấn đề.
-Thà hỏi thêm 2 phút còn hơn code sai 2 tiếng.
-LUÔN đọc các tài liệu liên quan tới tính năng tại thư mục `.agent/specs` TRƯỚC KHI thực hiện bất kỳ xử lý hoặc đề xuất giải pháp nào.
+
+> Không bao giờ đề xuất giải pháp kỹ thuật khi chưa hiểu rõ vấn đề.  
+> Thà hỏi thêm 2 phút còn hơn code sai 2 tiếng.  
+> **LUÔN** đọc các tài liệu liên quan tại `.agent/specs/` TRƯỚC KHI thực hiện bất kỳ xử lý nào.
 
 ---
 
-## Quy trình làm việc BẮT BUỘC (theo đúng thứ tự)
+## Quy trình bắt buộc (theo đúng thứ tự)
 
 ```
-[Phân tích yêu cầu]
+[1. Phân loại & Phân tích]
         ↓
-[Tạo trang Notion]
+[2. Tóm tắt & Xác nhận với user]
+        ↓
+[3. Tạo trang Notion (theo template chuẩn)]
         ↓  (nếu có UI)
-[Vẽ wireframe trên Stitch → ghi chú layout & component]
+[4. Vẽ wireframe Stitch → cập nhật Notion]
         ↓
-[Tạo file .md local — đính kèm Notion ID & Stitch screen ID]
+[5. Tạo file .spec.md local (theo template chuẩn)]
         ↓
-[Chờ user Confirm → mới bắt đầu code]
+[6. Cập nhật INDEX.md]
+        ↓
+[7. Chờ user Confirm → mới bắt đầu code]
+        ↓
+[8. Hoàn tất: update .md + Notion + INDEX.md]
 ```
 
-### Bước 1 — Đọc và phân loại yêu cầu
+---
 
-Xác định yêu cầu thuộc loại nào:
+## Bước 1 — Phân loại yêu cầu
 
-| Loại | Dấu hiệu | Ví dụ |
-|------|----------|-------|
-| Feature mới | "Thêm", "Tạo", "Cần có" | "Thêm chức năng export Excel" |
-| Thay đổi logic | "Sửa", "Đổi", "Thay" | "Sửa logic phân quyền tenant" |
-| Bug fix | "Lỗi", "Không hoạt động", "Bị" | "Bị lỗi 403 khi gán role" |
-| Refactor | "Tối ưu", "Dọn dẹp", "Tách" | "Tách component FormModal" |
-| Câu hỏi | "Tại sao", "Như thế nào", "Giải thích" | "Tại sao dùng IgnoreQueryFilters" |
+| Loại | Prefix | Ký hiệu trong tên file |
+|------|--------|------------------------|
+| Feature mới | `[feature]` | `{ten-tinh-nang}.spec.md` |
+| Enhancement | `[enhance]` | `{ten-tinh-nang}.spec.md` |
+| Bug fix | `[fix_bug]` | `bug-{ten-van-de}.spec.md` |
+| Refactor | `[refactor]` | `refactor-{ten}.spec.md` |
 
-### Bước 2 — Kiểm tra độ rõ ràng
+---
 
-Với mỗi yêu cầu, tự hỏi 5 câu sau. Nếu KHÔNG trả lời được → hỏi lại người dùng (từng câu một):
+## Bước 2 — Phân tích 5W + Scope
 
-1. **WHO** — Ai dùng tính năng này? (User thường / Admin / Tenant Admin / System)
-2. **WHAT** — Đầu vào là gì, đầu ra mong đợi là gì?
-3. **WHEN** — Trigger khi nào? (User click / Schedule / Event / API call)
-4. **CONSTRAINT** — Có giới hạn nào không? (Permission, Feature toggle, Tenant scope)
-5. **EDGE CASE** — Điều gì xảy ra khi dữ liệu rỗng / lỗi / không có quyền?
+Tự hỏi 5 câu sau. Nếu KHÔNG trả lời được → hỏi lại user **từng câu một**:
 
-### Bước 3 — Xác định scope ảnh hưởng
+1. **WHO** — Ai dùng? (User / Admin / Tenant Admin / System)
+2. **WHAT** — Đầu vào và đầu ra mong đợi là gì?
+3. **WHEN** — Trigger khi nào? (Click / Schedule / Event / API)
+4. **CONSTRAINT** — Có giới hạn nào? (Permission, Feature toggle, Tenant scope)
+5. **EDGE CASE** — Điều gì xảy ra khi rỗng / lỗi / không có quyền?
 
-Sau khi hiểu yêu cầu, map ra các layer bị ảnh hưởng:
+### Xác định scope ảnh hưởng
 
 - [ ] Model / Database thay đổi?
 - [ ] API endpoint mới hoặc sửa?
 - [ ] Permission / Feature mới?
-- [ ] Frontend page / component thay đổi? *(→ cần Stitch)*
+- [ ] Frontend page / component thay đổi? *(→ bắt buộc dùng Stitch)*
 - [ ] Background job / SignalR liên quan?
 - [ ] Ảnh hưởng multi-tenant không?
-- [ ] Cần migration DB không?
 
-### Bước 4 — Tóm tắt và xác nhận hiểu biết
+### Tóm tắt xác nhận (format bắt buộc)
 
-Trước khi tiến hành tạo tài liệu, LUÔN tóm tắt lại theo format:
-
----
-**Tôi hiểu yêu cầu như sau:**
+```
+Tôi hiểu yêu cầu như sau:
+- Loại: [feature / fix_bug / enhance / refactor]
 - Mục tiêu: {1 câu}
 - Actor: {ai thực hiện}
 - Flow: {mô tả ngắn}
-- Scope ảnh hưởng: {các layer liên quan}
-- Có UI không: {Có / Không}
-- Chưa rõ: {câu hỏi nếu còn thắc mắc}
+- Scope: {các layer liên quan}
+- Có UI: Có / Không
+- Chưa rõ: {câu hỏi nếu còn}
 
-**Đúng không? Nếu đúng tôi sẽ bắt đầu tạo tài liệu.**
+Đúng không? Nếu đúng tôi sẽ bắt đầu tạo tài liệu.
+```
 
 ---
 
-### Bước 5 — Tạo trang Notion
+## Bước 3 — Tạo trang Notion
 
-> **BẮT BUỘC** trước khi tạo file `.md` local.  
-> Tham chiếu Issues Tracker database ID từ `INDEX.md`.
+> Tạo page trong database **Issues Tracker** — tra cứu Database ID tại `INDEX.md`.
 
-**5a. Tạo page trong Notion** (theo loại yêu cầu):
+### Properties bắt buộc
 
-| Loại | Title Prefix | Database |
-|------|-------------|---------|
-| Feature | `[feature]` | Issues Tracker |
-| Bug fix | `[fix_bug]` | Issues Tracker |
-| Enhancement | `[enhance]` | Issues Tracker |
+| Property | Giá trị |
+|----------|---------|
+| **Title** | `[prefix] Tên ngắn gọn` |
+| **Type** | `fix_bug` / `enhance` / `feature` |
+| **Module** | Tên module (vd: `Administration > AI`) |
+| **Status** | `Todo` |
+| **Priority** | `Low` / `Medium` / `High` / `Critical` |
+| **Date** | YYYY-MM-DD |
+| **Assignee** | `Antigravity` |
 
-**5b. Nội dung body Notion** (bắt buộc có đủ các mục):
+### Body Notion — Template chuẩn (BẮT BUỘC đủ 6 section)
 
 ```markdown
 ## 📋 Mô tả
-[Mô tả rõ vấn đề / yêu cầu là gì, version snapshot ngày tháng]
+[Mô tả rõ vấn đề / yêu cầu. Ghi rõ: Snapshot ngày YYYY-MM-DD]
 
 ## 🎯 Mục tiêu & Actor
-- **Actor:** [User thường / Admin / System]
-- **Mục tiêu:** [1-2 câu]
+- **Actor:** [User / Admin / System]
+- **Mục tiêu:** [1-2 câu rõ ràng]
 
-## 🖼 Wireframe / Hình chụp
-[Đính kèm Stitch screen ID / URL nếu có UI — xem Bước 6]
-[Mô tả ngắn gọn layout và component sử dụng]
+## 🖼 Wireframe / UI Design
+> Stitch Screen ID: `{id}` | Project: Mint ERP (12239721184189784077)
+[Mô tả layout: Header / Sidebar / Main / Footer]
+[Liệt kê component chính]
+*(N/A nếu không có UI)*
 
 ## 🔍 Phân tích
 ### Flow
-[Mermaid diagram hoặc danh sách bước]
+[Mermaid diagram hoặc danh sách bước có thứ tự]
 
 ### Scope ảnh hưởng
 - Backend: ...
 - Frontend: ...
-- DB: ...
+- DB / Migration: ...
+- Permission: ...
 
 ## ✅ Danh sách Tasks
 - [ ] Task 1: ...
 - [ ] Task 2: ...
-(Ước tính: X giờ)
+*(Ước tính: X giờ)*
 
-## 📝 Ghi chú sau khi hoàn thành
-[Điền sau khi done]
+## 📝 Ghi chú hoàn thành
+*(Điền sau khi done: commit hash, side effect, breaking change)*
 ```
 
-**5c. Lưu lại Notion Page ID** để đính kèm vào file `.md`.
+---
 
-### Bước 6 — Vẽ wireframe trên Stitch (CHỈ khi có UI)
-
-> Chỉ thực hiện bước này nếu tính năng có **Frontend page / component mới hoặc thay đổi**.
-
-**6a. Tạo màn hình trên Stitch:**
+## Bước 4 — Vẽ wireframe Stitch (CHỈ khi có UI)
 
 ```
-Stitch Project: Mint ERP - Next.js System
+Project: Mint ERP - Next.js System
 Project ID: 12239721184189784077
 Tool: mcp_StitchMCP_generate_screen_from_text
 ```
 
-**Prompt mẫu cho Stitch:**
+**Format prompt Stitch (bắt buộc):**
+
 ```
-[Tên màn hình] — {mô tả màn hình}
+[Tên màn hình] — {mô tả chức năng}
 
-Layout bố cục:
-- Header: [mô tả]
-- Sidebar/Navigation: [mô tả]  
-- Main content: [mô tả vùng nội dung chính]
-- Footer/Actions: [mô tả]
+Layout:
+- Header: [nội dung, action buttons]
+- Sidebar: [nav items]
+- Main content: [mô tả vùng chính]
+- Footer / Actions: [pagination, save/cancel]
 
-Các component chính:
-- [ComponentName]: [mô tả mục đích]
-- ...
+Component chính:
+- [ComponentName]: [mục đích]
 
-Style: Phong cách Ant Design, màu chủ đạo #1677ff, dark sidebar
+Style: Design system "The Observational Lume" — Dark mode, font Manrope/Inter,
+primary #c0c1ff, background #0b1326, no-border rule, Lume Dot status indicators.
 ```
 
-**6b. Sau khi Stitch tạo xong:**
-- Ghi chú lại **Screen ID** từ kết quả trả về.
-- Mô tả ngắn gọn bố cục: vùng nào chứa component gì.
-- Liệt kê tên component sẽ tạo: `PageLayout`, `DataTable`, `FormModal`, v.v.
-- **Cập nhật link vào Notion** (phần `🖼 Wireframe / Hình chụp` trong body).
-- **Cập nhật danh sách màn hình** trong `erp-frontend-ui/SKILL.md` section `Danh sách màn hình đã đồng bộ`.
+**Sau khi Stitch tạo xong:**
+1. Ghi lại **Screen ID**.
+2. Cập nhật section `🖼 Wireframe` trong Notion (thêm ảnh + mô tả layout chi tiết).
+3. Cập nhật `erp-frontend-ui/SKILL.md` — thêm màn hình vào danh sách đã đồng bộ.
 
-### Bước 7 — Tạo file `.md` local
+---
 
-**Quy tắc đặt tên & vị trí:**
+## Bước 5 — Tạo file `.spec.md` local
 
-| Loại | Tên file | Thư mục |
-|------|----------|---------|
-| Feature | `{tên-tính-năng}.spec.md` | `.agent/specs/{module}/` |
-| Bug fix | `bug-{tên-vấn-đề}.spec.md` | `.agent/specs/{module}/` |
-| Enhancement | `{tên-tính-năng}.spec.md` | `.agent/specs/{module}/` |
+**Vị trí:** `.agent/specs/{module}/{tên-file}.spec.md`
 
-**Template file `.md`:**
+### Template `.spec.md` chuẩn (BẮT BUỘC)
 
 ```markdown
-# [Loại] {Tên tính năng}
+# [prefix] Tên tính năng
 
-> **Notion:** https://www.notion.so/{notion-page-id}  
-> **Stitch Screen ID:** `{screen-id}` *(nếu có UI)*  
-> **Ngày tạo:** YYYY-MM-DD  
-> **Cập nhật lần cuối:** YYYY-MM-DD  
-> **Status:** draft | in-progress | done  
-> **Module:** {tên service liên quan}
+> **Notion:** https://www.notion.so/{page-id}
+> **Stitch Screen ID:** `{id}` *(bỏ nếu không có UI)*
+> **Ngày tạo:** YYYY-MM-DD
+> **Cập nhật lần cuối:** YYYY-MM-DD
+> **Status:** draft | in-progress | done
+> **Module:** {service liên quan}
 
 ---
 
 ## 📋 Mô tả
 
-{Mô tả ngắn gọn 1-3 câu}
+{1–3 câu mô tả ngắn gọn mục đích của tính năng/bug}
 
 ## 🎯 Mục tiêu & Actor
 
 - **Actor:** {User / Admin / System}
 - **Mục tiêu:** {1 câu rõ ràng}
 
-## 🖼 UI Design (nếu có)
+## 🖼 UI Design *(bỏ nếu không có UI)*
 
-> Stitch Screen: [{tên màn hình}](https://stitch.withgoogle.com/...) — Screen ID: `{id}`
+> Stitch Screen ID: `{id}`
 
 ### Bố cục tổng thể
 {Mô tả layout — Header / Sidebar / Main / Actions}
@@ -209,13 +211,18 @@ Style: Phong cách Ant Design, màu chủ đạo #1677ff, dark sidebar
 ### Danh sách Component
 | Component | Mục đích | Server/Client |
 |-----------|----------|---------------|
-| `PageName` | Trang chính, fetch data | Server |
-| `DataTable` | Hiển thị danh sách | Server |
-| `FormModal` | Form tạo/sửa | Client |
+| `XxxPage` | Trang chính, fetch data | Server |
+| `XxxTable` | Hiển thị danh sách | Server |
+| `XxxModal` | Form tạo/sửa | Client |
 
-## 🔀 Flow / Sequence
+## 🔀 Flow
 
-{Sơ đồ Mermaid hoặc danh sách bước}
+```mermaid
+sequenceDiagram
+    ...
+```
+
+*(Hoặc danh sách bước có đánh số)*
 
 ## 📐 Scope ảnh hưởng
 
@@ -223,9 +230,9 @@ Style: Phong cách Ant Design, màu chủ đạo #1677ff, dark sidebar
 - [ ] API endpoint: ...
 - [ ] Permission: ...
 - [ ] Frontend: ...
-- [ ] Background job: ...
+- [ ] Background job / SignalR: ...
 
-## ✅ Implementation Checklist
+## ✅ Checklist
 
 ### Backend
 - [ ] ...
@@ -235,84 +242,84 @@ Style: Phong cách Ant Design, màu chủ đạo #1677ff, dark sidebar
 
 ## ⚠️ Rủi ro / Lưu ý
 
-- {Điều gì có thể sai nếu không cẩn thận}
+- {Điều có thể sai nếu không cẩn thận}
 
 ## 📝 Ghi chú hoàn thành
 
-*(Điền sau khi done: đã làm gì, commit nào, side effect không)*
+*(Điền sau khi done: commit hash, side effect, breaking change)*
 ```
-
-**7b. Cập nhật `INDEX.md`** — Thêm dòng mới vào bảng tương ứng:
-
-```markdown
-| {Tên tính năng} | [{file}.spec.md](./{module}/{file}.spec.md) | [Link]({notion-url}) | {Module} | draft |
-```
-
-### Bước 8 — Xác nhận và chờ approve
-
-Sau khi hoàn thành tài liệu, trình bày tóm tắt cho user:
-
-```
-✅ Đã tạo tài liệu:
-- Notion: {link}
-- Stitch: Screen ID {id} (nếu có UI)
-- File local: .agent/specs/{module}/{file}.spec.md
-
-📋 Các bước thực hiện đề xuất:
-1. {Bước cụ thể}
-2. ...
-
-⚠️ Rủi ro cần lưu ý:
-- ...
-
-👉 Bạn xác nhận để tôi bắt đầu code?
-```
-
-> **🔴 HARD-GATE: KHÔNG viết bất kỳ dòng code nào cho đến khi user confirm.**
-
-### Bước 9 — Hoàn tất (sau khi code xong)
-
-Sau khi hoàn thành code và verify:
-
-1. **Cập nhật file `.md`** — điền mục `Ghi chú hoàn thành`, đổi `Status: done`, ghi ngày.
-2. **Đồng bộ Notion** — cập nhật body Notion, chuyển Status → `Done`.
-3. **Cập nhật `INDEX.md`** — đổi status thành `done` / `fixed`.
-4. **Cập nhật `erp-frontend-ui/SKILL.md`** nếu có màn hình Stitch mới.
 
 ---
 
-## Khi nào được phép hỏi lại
+## Bước 6 — Cập nhật INDEX.md
 
-Hỏi lại khi:
-- Yêu cầu mâu thuẫn với logic hiện tại của hệ thống
-- Scope ảnh hưởng quá lớn, cần xác nhận trước khi tiến hành
+Thêm dòng vào bảng tương ứng trong `.agent/specs/INDEX.md`:
+
+```markdown
+| Tên tính năng | [file.spec.md](./{module}/file.spec.md) | [Link](notion-url) | Module | draft |
+```
+
+---
+
+## Bước 7 — Xác nhận và chờ user approve
+
+```
+✅ Đã tạo tài liệu phân tích:
+
+📄 File local:   .agent/specs/{module}/{file}.spec.md
+🌐 Notion:       {notion-url}
+🎨 Stitch:       Screen ID {id} (nếu có UI)
+
+📋 Kế hoạch thực hiện:
+1. ...
+2. ...
+(Ước tính: X giờ)
+
+⚠️ Rủi ro:
+- ...
+
+👉 Xác nhận để tôi bắt đầu code?
+```
+
+> **🔴 HARD-GATE: KHÔNG viết bất kỳ dòng code nào trước khi user gõ "confirm" / "ok" / tương đương.**
+
+---
+
+## Bước 8 — Hoàn tất sau khi code xong
+
+1. **File `.spec.md`**: Điền `📝 Ghi chú hoàn thành`, đổi `Status: done`, cập nhật ngày.
+2. **Notion**: Cập nhật body, chuyển Status → `Done`, ghi commit hash.
+3. **INDEX.md**: Đổi status `draft` → `done` / `fixed`.
+4. **Cleanup**: Xóa file `.log`, `.txt` tạm.
+
+---
+
+## Quy tắc hỏi lại
+
+**Hỏi lại khi:**
+- Yêu cầu mâu thuẫn với logic hiện tại
+- Scope quá lớn, cần xác nhận trước
 - Có nhiều cách giải quyết với trade-off khác nhau
-- Yêu cầu có thể hiểu theo 2+ nghĩa khác nhau
+- Yêu cầu có thể hiểu theo 2+ nghĩa
 
-Không hỏi khi:
-- Câu trả lời có thể tự suy ra từ codebase
-- Yêu cầu đã đủ rõ qua context cuộc trò chuyện
-- Là bug fix nhỏ với nguyên nhân rõ ràng
+**Không hỏi khi:**
+- Câu trả lời tự suy ra được từ codebase
+- Yêu cầu đã rõ qua context cuộc trò chuyện
+- Bug fix nhỏ với nguyên nhân hiển nhiên
 
-## Cách hỏi lại hiệu quả
+**Format hỏi lại (từng câu một):**
 
-Không hỏi nhiều câu một lúc. Ưu tiên câu hỏi quan trọng nhất trước:
-
-❌ Tệ:
-"Bạn muốn export theo định dạng nào?
-Ai được phép export?
-Export toàn bộ hay theo trang?"
-
-✅ Tốt:
-"Trước khi tiến hành, tôi cần xác nhận điểm quan trọng nhất:
-Export này dành cho tất cả user hay chỉ Admin?
-(Câu trả lời sẽ quyết định tôi đặt permission ở đâu)"
+```
+Trước khi tiến hành, tôi cần xác nhận điểm quan trọng nhất:
+{Câu hỏi duy nhất}
+(Câu trả lời sẽ quyết định {điều gì})
+```
 
 ---
 
 ## Đặc biệt — Yêu cầu mở rộng Roadmap
 
 Khi được yêu cầu mở rộng Roadmap hoặc bổ sung tính năng mới:
-- BẮT BUỘC dùng `search_web` kết hợp skill `erp-product-advisor`
-- Tìm hiểu tính năng ERP End-users đang quan tâm trên thị trường
-- Sau đó mới tạo tài liệu theo quy trình 9 bước ở trên
+- BẮT BUỘC dùng `search_web` + skill `erp-product-advisor`
+- Tìm hiểu xu hướng ERP thị trường trước
+- Sau đó mới tạo tài liệu theo 8 bước trên

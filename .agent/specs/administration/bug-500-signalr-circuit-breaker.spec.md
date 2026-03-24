@@ -1,57 +1,72 @@
-# Bug Analysis: 500 Internal Server Error in Next.js (SignalR Circuit Breaker)
+# [fix_bug] SignalR Circuit Breaker — 500 Internal Server Error
 
-## 1. Tóm tắt vấn đề (Summary)
-Ứng dụng Next.js nhận phản hồi HTTP 500 khi thực hiện các yêu cầu API thông qua Proxy. Qua kiểm tra logs, xác định nguyên nhân do `AdministrationService` không thể kết nối tới `SignalRService`, dẫn đến trạng thái **Circuit Breaker OPEN**.
+> **Notion:** *(resolved — không tạo Notion riêng)*
+> **Ngày tạo:** 2026-03-22
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AdministrationService / SignalRService
 
-- **Symptom:** Next.js UI hiển thị lỗi 500, console log báo "Failed to load resource".
-- **Impact:** Các chức năng cần cập nhật trạng thái thời gian thực (như Migration, Notifications) bị gián đoạn và gây lỗi lan truyền sang các API khác trong `AdministrationService`.
+---
 
-## 2. Phân tích nguyên nhân (Root Cause Analysis)
+## 📋 Mô tả
 
-### Sơ đồ luồng lỗi (Error Flow)
+Next.js trả về 500 khi gọi API qua Proxy. Nguyên nhân: `AdministrationService` không kết nối được `SignalRService` → Circuit Breaker chuyển sang trạng thái OPEN → tất cả request trong Admin Service đều fail theo.
+
+**Root causes (3 tầng):**
+1. `SignalRService` thiếu đăng ký kiểu dữ liệu JSON Source Gen → trả 500
+2. Redis thiếu `allowAdmin=true` → `SLOWLOG` command fail → Dashboard 500
+3. IP `172.23.48.1` chưa có trong `allowedOrigins` Next.js config
+
+## 🎯 Mục tiêu & Actor
+
+- **Actor:** System (runtime error)
+- **Mục tiêu:** Khôi phục kết nối Admin → SignalR, reset Circuit Breaker, ngăn lỗi lan truyền sang API khác
+
+## 🔀 Flow (Error Propagation)
+
 ```mermaid
 sequenceDiagram
     participant UI as Next.js Client
-    participant Proxy as Next.js API Proxy
-    participant Gateway as YARP Gateway
     participant Admin as AdministrationService
     participant SignalR as SignalRService
+    participant Redis as Redis
 
-    UI->>Proxy: Gọi API (vd: Get Tenants)
-    Proxy->>Gateway: Forward request
-    Gateway->>Admin: Định tuyến tới Admin Service
-    Admin->>Admin: Xử lý logic nghiệp vụ
-    Admin-->>SignalR: Gửi thông báo (HTTP POST /api/notifications)
-    Note over Admin,SignalR: Kết nối lỗi hoặc SignalR trả về 500
-    Admin->>Admin: Circuit Breaker chuyển sang trạng thái OPEN
-    Admin-->>Gateway: Trả về lỗi 500 (hoặc Exception)
-    Gateway-->>Proxy: Trả về 500
-    Proxy-->>UI: Trả về 500 Internal Server Error
+    UI->>Admin: GET /api/Tenants
+    Admin->>SignalR: POST /api/notifications (gửi thông báo)
+    SignalR->>Redis: SLOWLOG (thiếu allowAdmin)
+    Redis-->>SignalR: Error (không có quyền admin)
+    SignalR-->>Admin: 500
+    Admin->>Admin: Circuit Breaker → OPEN
+    Admin-->>UI: 500 (lan truyền)
 ```
 
-### Bằng chứng từ Logs (Evidence)
-- **AdministrationService Logs:**
-  `[15:59:21 WRN] Circuit Breaker is OPEN for SignalRService. Skipping calls.`
-- **SignalRService Logs (Root Cause):**
-  1. `System.NotSupportedException: JsonTypeInfo metadata for type 'SignalRService.Controllers.JobStatusRequest' was not provided by TypeInfoResolver` (Đã fix)
-  2. `StackExchange.Redis.RedisCommandException: This operation is not available unless admin mode is enabled: SLOWLOG` (Phát hiện mới)
+## 📐 Scope ảnh hưởng
 
-### Nguyên nhân gốc rễ (Root Cause)
-1. Thiếu đăng ký kiểu dữ liệu cho JSON Source Gen trong `SignalRService`.
-2. `SignalRService` gọi lệnh `SLOWLOG` tới Redis nhưng chuỗi kết nối thiếu quyền `allowAdmin=true`. Dashboard của Next.js gọi API `redis-slowlog` bị lỗi 500, dẫn đến toàn bộ trang Dashboard hiển thị lỗi "Connection Lost".
-3. Địa chỉ IP của người dùng (`172.23.48.1`) chưa có trong `allowedOrigins` của Next.js config, có thể gây lỗi Server Actions.
+- [x] Model / DB: N/A
+- [x] API endpoint: N/A
+- [x] Permission: N/A
+- [x] Frontend: `next.config.ts` — thêm allowed origins
+- [x] Background job: N/A
+- [x] SignalR: `AppJsonContext.cs`, Redis connection string `allowAdmin=true`
 
-## 3. Checklist Thực hiện (Checklist)
-- [x] Đăng ký `NotificationRequest` và `JobStatusRequest` vào `AppJsonContext.cs`.
-- [x] Bật `allowAdmin=true` trong chuỗi kết nối Redis của `SignalRService`.
-- [x] Thêm `172.23.48.1:3001` vào `next.config.ts`.
-- [x] Rebuild và restart `erp-signalr`.
-- [x] Restart `erp-admin-service` để reset trạng thái Circuit Breaker.
-- [ ] Xác nhận UI Next.js hoạt động bình thường.
+## ✅ Checklist
 
-## 4. Giải pháp đã thực hiện (Implemented Solution)
-1. Thêm attribute `[JsonSerializable]` cho các class request trong `SignalRService/Infrastructure/AppJsonContext.cs`.
-2. Chạy lệnh rebuild: `docker-compose up -d --build signalr admin-service`.
+### SignalRService
+- [x] Thêm `[JsonSerializable]` cho `NotificationRequest` và `JobStatusRequest` vào `AppJsonContext.cs`
+- [x] Bật `allowAdmin=true` trong Redis connection string
+- [x] Rebuild: `docker-compose up -d --build signalr`
 
----
-**Tôi đã hoàn thành bước phân tích lỗi. Bạn có muốn tôi tiến hành kiểm tra sâu hơn vào log của SignalRService để tìm nguyên nhân gốc rễ không?**
+### AdministrationService
+- [x] Restart để reset Circuit Breaker: `docker-compose restart admin-service`
+
+### Frontend
+- [x] Thêm `172.23.48.1:3001` vào `allowedOrigins` trong `next.config.ts`
+
+## ⚠️ Rủi ro / Lưu ý
+
+- Port SignalRService phải nhất quán: Dockerfile `10000`, docker-compose `10000`, AdminService config `http://signalr:10000`
+- Circuit Breaker chỉ reset sau khi restart container hoặc hết `samplingDuration`
+
+## 📝 Ghi chú hoàn thành
+
+Fixed 2026-03-22. Xem thêm: [bug-tenant-migration-notification.spec.md](./bug-tenant-migration-notification.spec.md) cho SignalR port consistency fix.

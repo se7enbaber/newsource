@@ -1,48 +1,65 @@
-# Spec: Nâng cấp Toàn diện Dashboard Giám sát Hệ thống
+# [enhance] Nâng cấp Dashboard Giám sát Hệ thống
 
-## 1. Vấn đề & Mục tiêu (Problem & Goal)
-- **Vấn đề**:
-    1. Lỗi deprecation: Component `Timeline` sử dụng `children` thay vì `content`.
-    2. Thiếu tính năng: Dashboard chỉ hiển thị trạng thái tĩnh, thiếu biểu đồ trực quan cho Microservices và thông tin chi tiết về lưu trữ Redis.
-- **Mục tiêu**:
-    - Sửa lỗi UI và nâng cao trải nghiệm người dùng với các tương tác thời gian thực.
-    - Cung cấp biểu đồ RAM/CPU (lịch sử 1 phút) cho từng Microservice.
-    - Cung cấp công cụ Explorer cho Redis Engine để giám sát bộ nhớ và keyspace.
-- **Ngày phát hiện**: 2026-03-15
-- **Ngày xử lý**: 2026-03-15
+> **Notion:** *(chưa tạo — enhancement nhanh, resolve nội bộ)*
+> **Ngày tạo:** 2026-03-15
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** Frontend (my-nextjs)
 
-## 2. Phân tích Kỹ thuật (Technical Analysis)
+---
 
-### Hiện trạng (Current State)
-- `page.tsx` sử dụng Ant Design 5.x/6.x.
-- Dữ liệu được lấy từ các endpoint `/api/Monitoring/services-health` và `/api/Monitoring/redis-info`.
+## 📋 Mô tả
 
-### Giải pháp Thực hiện (Implementation Solution)
-- **Frontend Core**:
-    - Thay đổi thuộc tính `children` sang `content` cho `Timeline`.
-    - Sử dụng `recharts` để vẽ biểu đồ line/area cho Microservices và pie chart cho Redis.
-- **Microservices Monitoring**:
-    - Implement pooling (10s/lần) để lưu trữ lịch sử metrics (6 snapshots gần nhất).
-    - Thêm Modal hiển thị biểu đồ vùng (Area Chart) CPU & RAM.
-- **Redis Engine Exploration**:
-    - Hiển thị thông số Memory Peak trong Dashboard chính.
-    - Thêm Modal Redis Explorer hiển thị Keyspace (DB0, DB1...) và Phân bổ bộ nhớ chi tiết.
+Nâng cấp toàn diện Dashboard giám sát hệ thống: fix Ant Design deprecation `Timeline.children`, thêm biểu đồ Area Chart CPU/RAM realtime cho từng Microservice, và Redis Explorer Modal hiển thị Keyspace + Memory breakdown.
 
-### Flow tương tác (Workflow)
-1. User nhấn vào card Microservice -> Hiển thị biểu đồ hiệu năng.
-2. User nhấn vào card Redis -> Hiển thị chi tiết bộ nhớ và danh sách key/database.
+## 🎯 Mục tiêu & Actor
 
-## 3. Scope ảnh hưởng
-- `my-nextjs/app/page.tsx`: Cấu trúc lại component và tích hợp thư viện chart.
+- **Actor:** System Admin / Host Admin
+- **Mục tiêu:** Cung cấp công cụ giám sát trực quan, real-time cho toàn bộ microservices stack và Redis
 
-## 4. Checklist thực hiện
-- [x] Fix Ant Design deprecation warning.
-- [x] Setup logic pooling metrics thời gian thực.
-- [x] Xây dựng Modal biểu đồ hiệu năng Microservices.
-- [x] Xây dựng Modal Redis Explorer (Keyspace & Memory).
-- [x] Tối ưu hóa UI/UX với hiệu ứng hover và dark-theme modals.
+## 🖼 UI Design
 
-## 5. Metadata
-- **Status**: completed
-- **Priority**: medium
-- **Department**: Frontend
+> Stitch Screen ID: `e18a4ee00e8d477a821eb7c6504315c5` (Mobile System Health 780×5358px — xem Tenants Notion page)
+
+### Bố cục tổng thể
+- **Main Dashboard:** Service cards (Administration, Gateway, SignalR, Identity) với Lume Dot status → Click → Mở Modal biểu đồ Area Chart CPU+RAM (lịch sử 6 snapshots, 10s/poll)
+- **Redis Card:** Memory Used / Peak + Click → Mở Redis Explorer Modal (Keyspace DB0–DBn, Memory pie chart)
+
+### Danh sách Component
+| Component | Mục đích | Server/Client |
+|-----------|----------|---------------|
+| `SystemDashboardPage` | Trang giám sát chính | Server |
+| `ServiceMetricsModal` | Area chart CPU+RAM per service | Client |
+| `RedisExplorerModal` | Keyspace + memory breakdown | Client |
+
+## 🔀 Flow
+
+1. Page load → `GET /api/Monitoring/services-health` → render service cards
+2. `setInterval(10s)` → poll metrics → accumulate 6 snapshots per service
+3. User click service card → Modal mở với Area Chart (CPU %, RAM MB) từ snapshot history
+4. User click Redis card → `GET /api/Monitoring/redis-info` → Modal Redis Explorer
+
+## 📐 Scope ảnh hưởng
+
+- [x] Model / DB: N/A
+- [x] API endpoint: `GET /api/Monitoring/services-health`, `GET /api/Monitoring/redis-info` (đã có)
+- [x] Permission: `Monitoring.View`
+- [x] Frontend: `my-nextjs/app/page.tsx` — refactor component + `recharts` integration
+
+## ✅ Checklist
+
+### Frontend
+- [x] Fix Ant Design: `Timeline.children` → `Timeline.content`
+- [x] Setup polling logic (10s interval, store max 6 snapshots)
+- [x] `ServiceMetricsModal` — Area Chart CPU & RAM với `recharts`
+- [x] `RedisExplorerModal` — Keyspace list + Memory pie chart
+- [x] Dark-theme modals + hover effects
+
+## ⚠️ Rủi ro / Lưu ý
+
+- Polling 10s/lần tạo continuous requests — cần cleanup `clearInterval` khi unmount
+- `recharts` thêm ~50KB bundle size
+
+## 📝 Ghi chú hoàn thành
+
+Hoàn thành 2026-03-15. File sửa: `my-nextjs/app/page.tsx`.

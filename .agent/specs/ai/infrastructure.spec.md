@@ -1,68 +1,82 @@
+# [feature] AI Service Infrastructure (RAG Architecture)
+
+> **Notion:** *(chưa có trang riêng — xem Business Notebook spec)*
+> **Ngày tạo:** 2026-03-17
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AiService (Python/FastAPI) / Qdrant
+
 ---
-feature: AI Service Architecture
-module: AiService / Qdrant
-status: active
-updated: 2026-03-17
----
 
-# Architecture: AI Service Infrastructure
+## 📋 Mô tả
 
-## 1. Tổng quan
-Dịch vụ AI phục vụ tính năng **Business AI Notebook**. 
-Cung cấp giải pháp RAG (Retrieval-Augmented Generation) để trả lời các câu hỏi nghiệp vụ ERP.
+Hạ tầng AI phục vụ **Business AI Notebook**: RAG pipeline (Retrieval-Augmented Generation) với Hybrid Search (BM25 + Qdrant Vector), Cohere Rerank, Redis Semantic Cache và isolation đa tenant. Mọi dữ liệu được tag `tenant_id` → không bao giờ cross-tenant.
 
-## 2. Tech Stack Chi tiết
-- **Frontend Proxy**: Next.js API Routes (Server Side handling API Key).
-- **Core AI Service**: Python 3.11 (FastAPI).
-- **Vector Database**: Qdrant (Lưu trữ và tìm kiếm vector).
-- **LLM Engine**: Google Gemini 1.5 Pro.
-- **Embedding Model**: Google Gemini Embeddings (`models/embedding-001`).
+## 🎯 Mục tiêu & Actor
 
-## 3. Quy tắc Bảo mật & Isolation (Multi-tenant)
-- **Tenant Isolation**: 
-  - Mọi dữ liệu (Chunks) khi đẩy vào Qdrant đều được gán nhãn `tenant_id` trong metadata.
-  - Khi người dùng gửi câu hỏi, AI Service thực hiện lọc Metadata trùng khớp với `tenant_id` từ Token.
-- **Security Guardrails**: 
-  - System Prompt chặn toàn bộ các câu hỏi liên quan đến: Database schema, API endpoints, Code Backend (.NET/Python), và Kiến trúc hệ thống.
-  - Từ chối lịch sự và hướng dẫn người dùng quay lại nội dung nghiệp vụ.
+- **Actor:** End User (qua Frontend Chat Widget), AiService (internal)
+- **Mục tiêu:** Trả lời câu hỏi nghiệp vụ ERP chính xác dựa hoàn toàn trên Knowledge Base nội bộ — không rò rỉ thông tin kỹ thuật
 
-## 4. Sơ đồ Hoạt động (Data Flow)
+## 🔀 Flow
 
-### Sơ đồ ASCII (Tổng quan):
-```text
-+----------+      +----------------+      +------------------+      +-----------------+
-|  Client  | <--> | Next.js Proxy  | <--> |  AiService       | <--> |  Gemini 1.5 Pro |
-| (Widget) |      | (Auth & Proxy) |      |  (/chat endpoint)|      |  (LLM Engine)   |
-+----------+      +----------------+      +--------+---------+      +-----------------+
-                                                   |
-                                                   | Query & Filter:
-                                                   | { tenant_id: "..." }
-                                                   v
-                                          +------------------+
-                                          |  Qdrant Vector DB|
-                                          | (Knowledge Base) |
-                                          +------------------+
-```
-
-### Sơ đồ Mermaid (Chi tiết):
 ```mermaid
 graph LR
-    A[Client] --> B[Next.js Proxy]
-    B --> C[AiService: /chat]
-    C --> D{Qdrant Retriever}
-    D -->|Filter: tenant_id| E[(Knowledge Base)]
-    E --> D
-    D --> F[Gemini 1.5 Pro]
-    F -->|Answer based on Context| G[Result]
-    G --> A
+    A[Client Chat Widget] --> B[Next.js Proxy\n/api/ai/chat]
+    B --> C[AiService /chat\nFastAPI]
+    C --> D{Hybrid Retriever}
+    D --> E[BM25 Keyword Search\n0.3 weight]
+    D --> F[Qdrant Vector Search\n0.7 weight]
+    E --> G[EnsembleRetriever]
+    F --> G
+    G --> H[Cohere Rerank v3.0\nTop 3 docs]
+    H --> I[Redis Semantic Cache\nCheck hit?]
+    I -->|Cache hit| J[Return cached answer]
+    I -->|Miss| K[Gemini 1.5 Pro LLM]
+    K --> L[Answer + cache → Redis]
+    L --> A
 ```
 
-## 5. Cấu hình Port & Kết nối
-- **AiService**: `8000:8000`
-- **Qdrant**: `6333:6333` (HTTP), `6334:6334` (gRPC)
-- Biến môi trường quan trọng: `GOOGLE_API_KEY`, `QDRANT_HOST`, `QDRANT_COLLECTION_NAME`.
+**Security Guardrails:** System Prompt chặn câu hỏi về DB schema, API, code backend, kiến trúc hệ thống.
 
-## 6. Lộ trình Triển khai
-- [x] Giai đoạn 1: Triển khai Infrastructure (Docker, Python boilerplate).
-- [x] Giai đoạn 2: Hoàn thiện logic RAG & Ingestion.
-- [ ] Giai đoạn 3: Tích hợp vào Frontend ERP.
+## 📐 Scope ảnh hưởng
+
+- [x] Model / DB: Qdrant collection (per-tenant chunks với `tenant_id` metadata), Redis (semantic cache)
+- [x] API endpoint: `POST /chat`, `POST /ingest`, `POST /feedback`
+- [x] Permission: `tenant_id` từ JWT → filter Qdrant metadata
+- [x] Frontend: Next.js API Routes `/api/ai/chat` làm proxy (giữ GOOGLE_API_KEY server-side)
+- [ ] Background job: N/A
+
+## ✅ Checklist
+
+### AiService (Python)
+- [x] FastAPI boilerplate + Docker setup (port 8000)
+- [x] Qdrant integration — collection per-system, filter by `tenant_id`
+- [x] Ingestion: `.md` files → chunk (800/150) → embed → Qdrant
+- [x] Hybrid Search: `EnsembleRetriever` (BM25 0.3 + Qdrant 0.7)
+- [x] Cohere Rerank v3.0 — top 3 docs
+- [x] Redis Semantic Cache
+- [x] System Guardrail Prompt
+- [x] `/feedback` endpoint (thumbs up/down)
+- [x] Token usage extraction + gửi log về AdminService
+
+### Frontend
+- [x] `/api/ai/chat` proxy route
+- [x] `/api/ai/ingest` admin trigger route
+
+## ⚠️ Rủi ro / Lưu ý
+
+- **Hallucination**: Cần System Prompt mạnh + "I don't know" fallback rõ ràng
+- **Multi-tenant isolation**: Mọi ingest/query phải kèm `tenant_id` — không được default tenant hoặc skip filter
+- **Ports:** AiService `8000:8000`, Qdrant `6333:6333` (HTTP) / `6334:6334` (gRPC)
+
+## 📝 Ghi chú hoàn thành
+
+Infrastructure hoàn chỉnh từ 2026-03-17. Tối ưu Hybrid Search + Rerank + Cache hoàn thành giai đoạn 5. Giai đoạn 6 (AI Governance) đang in-progress.
+
+| Biến môi trường | Mục đích |
+|-----------------|---------|
+| `GOOGLE_API_KEY` | Gemini LLM + Embedding |
+| `QDRANT_HOST` | Vector DB host |
+| `QDRANT_COLLECTION_NAME` | Tên collection |
+| `COHERE_API_KEY` | Reranking model |
+| `REDIS_URL` | Semantic cache |

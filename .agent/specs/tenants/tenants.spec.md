@@ -1,32 +1,74 @@
+# [feature] Quản lý Đa Khách Hàng (Tenants)
+
+> **Notion:** https://www.notion.so/Tenants-Management-Spec-32bf1e6a215c81eb9678f495970a1ba3
+> **Stitch Screen ID:** `3eafb27ebc9442e7bfe413c8783aa1b1` (Desktop), `d727938df97b4cb7b149e6ff7ffafc8b` (Desktop v2)
+> **Ngày tạo:** 2026-03-10
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AdministrationService
+
 ---
-feature: Tổ chức & Khách hàng
-module: AdministrationService
-status: stable
-updated: 2026-03-10
----
 
-# Quản lý Đa Khách Hàng (Tenants)
+## 📋 Mô tả
 
-## Mô tả
-Module quản trị dành riêng cho System/Host Admin điều khiển vòng đời hoạt động của từng Client (Tenant), các config CSDL.
+Module quản trị dành cho System/Host Admin điều phối vòng đời của từng Tenant (Client): tạo mới, cấu hình CSDL riêng, soft-delete khi off-board. Mọi request của User trong một Tenant đều mang `TenantId` header ngầm định.
 
-## Flow chính
-Truy xuất Màn Hình Grid Tenant `/api/tenants` → Danh sách Tenant list.
-Form chỉnh sửa Add/Edit của Frontends nhận Cấu hình `TenantIdentifier`, Tên Hiển Thị, DbProvider (Postgres/Mssql) và chuỗi Isolated Connection string Database. Sau đó Save record cập nhật. Request User sau cùng của Tenant gọi qua Endpoint nào cũng mang TenantId Header ngầm định. Code Backend `ApplicationDbContext` nhận Provider phân mảnh Filter EF Data hoặc đổi sang Context IP Server khác cấp Middleware.
+## 🎯 Mục tiêu & Actor
 
-## Acceptance Criteria
-- [ ] Cho phép khai báo Database riêng kết nối (nếu dùng Isolated Schema).
-- [ ] Ngầm auto bypass Record của User "Master Admin".
-- [ ] Tự auto đính kèm `TenantId` qua EF Core Overriding.
-- [ ] Xoá Tenant phải thông qua Soft Delete, che mờ list của user UI. 
+- **Actor:** System Admin (Host)
+- **Mục tiêu:** Quản lý toàn bộ vòng đời Tenant — từ đăng ký tới deactivation — kèm cấu hình database isolation
 
-## API
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| GET | `/api/tenants` | Paged Tenants Array Data |
-| POST | `/api/tenants` | Upload Object Tạo DB Tenant Identifier |
-| DELETE | `/api/tenants/{id}`| Remove Client khỏi danh mục Active |
+## 🖼 UI Design
 
-## Liên quan
-- Đọc tiếp luồng Gói Dịch vụ Tenant: [Feature Toggles](./tenants-features.spec.md)
-- Filter Data ngầm và Bypass Lệnh Ngầm: [Multitenancy pattern/Skill](../../skills/erp-multi-tenant/SKILL.md)
+> Stitch Screen ID: `3eafb27ebc9442e7bfe413c8783aa1b1` (Desktop 2560×2048px) | `d727938df97b4cb7b149e6ff7ffafc8b` (Desktop v2 2560×2068px) | `e18a4ee00e8d477a821eb7c6504315c5` (Mobile System Health 780×5358px)
+
+### Bố cục tổng thể
+- **Sidebar (~220px):** Logo Mint ERP → Nav: Dashboard / Tenants (active) / Roles / Settings → PRO FEATURES + Support + Log Out
+- **Main:** H1 "Tenant Organizations" + Filter/Search bar → Card grid 3 cột: mỗi card hiển thị Tên, Ngành, Subdomain, Status badge + action icons (View/Edit/Suspend)
+
+### Danh sách Component
+| Component | Mục đích | Server/Client |
+|-----------|----------|---------------|
+| `TenantsPage` | Trang chính, fetch danh sách tenant | Server |
+| `TenantCardGrid` | Grid card hiển thị tenants | Server |
+| `TenantFormModal` | Form tạo/sửa tenant + DB config | Client |
+| `SystemHealthMobile` | Giám sát service health (mobile) | Client |
+
+## 🔀 Flow
+
+1. `GET /api/tenants?page=&size=` → Render Card Grid
+2. Tạo mới: Form nhận `TenantIdentifier`, Tên, DbProvider (Postgres/MSSQL), Connection String → `POST /api/tenants`
+3. `ApplicationDbContext` nhận Provider → EF Data Filter / chuyển Context qua Middleware
+4. Mọi request sau đều mang `TenantId` header ngầm; Backend `IgnoreQueryFilters` cho Master Admin
+5. Xóa: Soft Delete → `DELETE /api/tenants/{id}` → ẩn khỏi list
+
+## 📐 Scope ảnh hưởng
+
+- [x] Model / DB: Entity `Tenant`, EF Core Multi-tenant Filter, `TenantId` trên mọi entity
+- [x] API endpoint: GET/POST/DELETE `/api/tenants`
+- [x] Permission: `Tenants.View`, `Tenants.Create`, `Tenants.Delete` — chỉ Host Admin
+- [x] Frontend: `TenantsPage`, `TenantCardGrid`, `TenantFormModal`
+- [x] Background job: `TenantMigrationJob` — chạy migration DB mới khi tạo Tenant
+
+## ✅ Checklist
+
+### Backend
+- [x] Entity `Tenant` + EF Multi-tenant Filter
+- [x] `TenantsController` với 3 endpoints
+- [x] `TenantMigrationJob` (Hangfire) — idempotent, xử lý `42P07` gracefully
+- [x] Master Admin bypass `IgnoreQueryFilters`
+
+### Frontend
+- [x] `TenantsPage` + `TenantCardGrid`
+- [x] `TenantFormModal` với DbProvider selector + Connection string field
+- [x] Soft delete với xác nhận
+
+## ⚠️ Rủi ro / Lưu ý
+
+- `TenantMigrationJob` phải idempotent — xem [bug fix](./bug-tenant-migration-notification.spec.md)
+- Isolated DB connection string phải validate trước khi save (test connect)
+- Liên quan: [Feature Toggles](./tenants-features.spec.md) | [Multitenancy pattern](../../skills/erp-multi-tenant/SKILL.md)
+
+## 📝 Ghi chú hoàn thành
+
+Module đã ổn định. Bug migration `42P07` đã resolve ngày 2026-03-22. UI đã đồng bộ Stitch → Notion ngày 2026-03-25 với 3 screens.

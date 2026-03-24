@@ -1,42 +1,88 @@
+# [feature] Đăng nhập & Xác thực (OpenIddict OAuth2)
+
+> **Notion:** *(chưa có mapping trong INDEX.md — cần bổ sung)*
+> **Stitch Screen ID:** `85c018aa7c184097a9d4ef40ef880c05` (Mobile Login 780×1768px)
+> **Ngày tạo:** 2026-03-10
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AdministrationService / Frontend
+
 ---
-feature: Đăng nhập & Xác thực OpenIddict
-module: AdministrationService
-status: stable
-updated: 2026-03-10
----
 
-# Đăng nhập hệ thống & uỷ quyền AccessToken
+## 📋 Mô tả
 
-## Mô tả
-Hệ thống sử dụng OAuth2 Password Flow với quản lý JWT tạo trực tiếp trên Backend (Administration Service), phân tách Auth guard client-side của Next.js với Component AuthWrapper.
+Hệ thống xác thực sử dụng OAuth2 Password Flow với OpenIddict tạo JWT trực tiếp trên AdministrationService. Next.js đóng vai proxy trung gian và quản lý Token client-side qua `AuthWrapper` component + localStorage.
 
-## Flow chính
-1. Trình duyệt nhập {user, password, tenantCode} → `POST /api/proxy/connect/token` trên Next.js Server.
-2. Next.js forward đến Cổng YARP Gateway → tới Backend `AdministrationService`.
-3. Backend map TenantCode → `ToUpperInvariant()` lấy thông tin Tenant ID.
-4. Đọc Database context scope riêng (Hỗ trợ truy xuất Dynamic Connection String nếu Tenant nằm Isolated Database riêng).
-5. Query `ApplicationUser`, xác nhận mật khẩu (SignInManager).
-6. Background queries (từ `Task.WhenAll`): Tải `UserRoles` & lấy `TenantFeatures` từ DB hoặc Cache.
-7. OpenIddict encode JWT Token chứa claims (`tenant_id`, `role`, `Permission`, `Feature`).
-8. Next.js Client nhận object Access Token, mount biến localStorage, redirect sang Dashboard.
+## 🎯 Mục tiêu & Actor
 
-## Acceptance Criteria
-- [ ] Cung cấp Request / Response trả JWT bảo mật, xử lý bypass self-certificate.
-- [ ] Check Login thành công thì memory cache map permission luôn.
-- [ ] Frontend Check Token Guard theo `useRef` đồng bộ loại bỏ Spinner tải trễ.
-- [ ] Đăng xuất phải clear Context Token cache trước khi Call API `logout`.
+- **Actor:** Mọi User (đăng nhập lần đầu), AuthWrapper (guard mỗi route)
+- **Mục tiêu:** Xác thực an toàn, phát JWT chứa claims đầy đủ (tenant, role, permission, feature), bảo vệ tất cả routes
 
-## API
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| POST | `/connect/token` | Lấy Token. Payload FormUrlEncoded |
-| POST | `/connect/logout` | Invalid JWT Token |
+## 🖼 UI Design
 
-## UI Rules & Validation
-- Account bị 401 Unauthorized phải remove bộ nhớ localStorage ngay lập tức thay vì dính vòng lặp redirect về Login.
+> Stitch Screen ID: `85c018aa7c184097a9d4ef40ef880c05` (Mobile 780×1768px)
 
-## Edge Cases
-- Wildcard Admin có user `admin` tự động bỏ bớt Permission Claims nặng nề nhồi vào Token payload để làm giảm Token body size, bypass Check API qua code ẩn chứa role 'Admin'.
+### Bố cục tổng thể
+- Full-screen dark gradient — Logo MintERP + tagline trên đầu
+- Glassmorphism card giữa màn hình: Email field, Password field (toggle show/hide), Remember Me, nút LOGIN (gradient primary, full width), link "Forgot password?"
 
-## Liên quan
-- Xem thêm: [Dynamic Permission Skill](../../skills/erp-dynamic-permission/SKILL.md)
+### Danh sách Component
+| Component | Mục đích | Server/Client |
+|-----------|----------|---------------|
+| `LoginPage` | Trang đăng nhập | Client |
+| `AuthWrapper` | Guard bảo vệ toàn bộ routes | Client |
+| `TokenManager` | Quản lý localStorage + refresh | Client |
+
+## 🔀 Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser
+    participant Next as Next.js (proxy)
+    participant GW as YARP Gateway
+    participant Admin as AdministrationService
+
+    Browser->>Next: POST /api/proxy/connect/token {user, password, tenantCode}
+    Next->>GW: Forward request
+    GW->>Admin: Route to Admin
+    Admin->>Admin: Map TenantCode → TenantId (toUpperInvariant)
+    Admin->>Admin: Query ApplicationUser + verify password
+    Admin->>Admin: Task.WhenAll [UserRoles, TenantFeatures]
+    Admin->>Admin: OpenIddict encode JWT {tenant_id, role, Permission, Feature}
+    Admin-->>GW: JWT AccessToken
+    GW-->>Next: JWT AccessToken
+    Next-->>Browser: Set localStorage + redirect Dashboard
+```
+
+## 📐 Scope ảnh hưởng
+
+- [x] Model / DB: `ApplicationUser`, `UserRole`, `TenantFeature` — Dynamic Connection String per Tenant
+- [x] API endpoint: `POST /connect/token` (FormUrlEncoded), `POST /connect/logout`
+- [x] Permission: JWT claims: `tenant_id`, `role`, `Permission`, `Feature`
+- [x] Frontend: `LoginPage`, `AuthWrapper` (useRef guard), `TokenManager`
+- [ ] Background job: N/A
+
+## ✅ Checklist
+
+### Backend
+- [x] OpenIddict config với Password Flow
+- [x] `TenantCode.ToUpperInvariant()` mapping
+- [x] `Task.WhenAll` load UserRoles + TenantFeatures song song
+- [x] Wildcard Admin — bypass Permission claims nặng, dùng role 'Admin' shortcut
+- [x] Self-certificate bypass cho dev environment
+
+### Frontend
+- [x] `LoginPage` với Glassmorphism card
+- [x] `AuthWrapper` guard dùng `useRef` (loại bỏ spinner flicker)
+- [x] 401 → clear localStorage ngay, tránh redirect loop
+- [x] Logout → clear cache trước khi call `/connect/logout`
+
+## ⚠️ Rủi ro / Lưu ý
+
+- Token payload size: Wildcard Admin không nhồi tất cả Permission claims vào JWT — code backend bypass theo role 'Admin'
+- Isolated DB Tenant: `AdministrationService` phải switch Connection String đúng scope trước khi query
+
+## 📝 Ghi chú hoàn thành
+
+Module ổn định từ 2026-03-10. Stitch screen (Login Mobile) đã đồng bộ Notion ngày 2026-03-25.
+Xem thêm: [Dynamic Permission Skill](../../skills/erp-dynamic-permission/SKILL.md)

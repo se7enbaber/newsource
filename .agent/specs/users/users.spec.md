@@ -1,41 +1,75 @@
+# [feature] Quản lý Người Dùng
+
+> **Notion:** https://www.notion.so/Users-Management-Spec-32bf1e6a215c8134a15dc0ff71c32173
+> **Stitch Screen ID:** `b8cd9c15c2d943c88061b9fcce8f1c27` (Desktop), `32580d61fd304bfab1a93757e58714a1` (Mobile)
+> **Ngày tạo:** 2026-03-10
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AdministrationService
+
 ---
-feature: Quản lý Người Dùng
-module: AdministrationService
-status: stable
-updated: 2026-03-10
----
 
-# Danh mục Người Dùng Vận Hành
+## 📋 Mô tả
 
-## Mô tả
-Hiển thị danh sách, phân quyền và điều chỉnh hồ sơ của các nhân viên có mặt trong Tenant bao gồm thông tin truy cập của hệ thống. 
+Module quản lý nhân sự cho phép Admin/Tenant Admin xem, thêm, sửa, xóa tài khoản người dùng và phân quyền vai trò trong hệ thống. Áp dụng Soft Delete và đảm bảo tính đơn nhất Username theo Tenant.
 
-## Flow chính
-1. UI Page Grid (Bảng dữ liệu Client) → Call `/api/Users` trả JSON.
-2. Thêm mới / Cập nhật:
-   - Click nút trên Toolbar (dùng `AppButton`), Popup quản lý (`AppPopup`) gọi Component `UserForm`.
-   - Ngăn thay đổi Field Username đối với User đang bật Edit Mode.
-   - `SelectedRoles` là array riêng, Frontend bóc string vào Payload gửi REST `/api/Users`.
-   - Admin Service tiến hành lookup thông tin, nếu pass, cập nhật info DB → Delete Identity UserRoles trong CSDL ngầm định → IgnoreQueryFilter gán Set List Roles theo payload cấp UI mới.
-3. Dữ liệu thay đổi thì bảng Refresh. Mọi dữ kiện DB đều bị soft delete khi gỡ thông tin nhân viên (`IsDeleted`).
+## 🎯 Mục tiêu & Actor
 
-## Acceptance Criteria
-- [ ] Mở khóa lock Component Popups (nút cancel/escape lock) khi submit. Guard Dialog hiển thị Check Dirty xác nhận Abandon changes.
-- [ ] Backend phải tự động chặn duplicate Identity NormalizedUsername với Index kép User/Tenant.
-- [ ] Cập nhật password mới của account được chạy flow độc lập (Bypass update empty string pass của UserForm).
+- **Actor:** Tenant Admin / System Admin
+- **Mục tiêu:** Quản lý toàn bộ vòng đời tài khoản nhân viên trong một Tenant (CRUD + phân quyền Role)
 
-## API
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| GET | `/api/Users` | PageNumber, PageSize, SearchTerm |
-| POST | `/api/Users` | Form Add user kèm Group Role array `string[]` |
-| PUT | `/api/Users/{id}` | Update form |
-| DELETE | `/api/Users/{id}` | Soft delete thành viên |
+## 🖼 UI Design
 
-## UI Rules & Validation
-- Dropdown chọn vai trò `Checkable Tags` không được đẩy dữ liệu null hay array empty trừ khi chủ đích remove sạch các Role của member.
-- Table Row có Actions, hover sẽ xổ dropdown hành động.
+> Stitch Screen ID: `b8cd9c15c2d943c88061b9fcce8f1c27` (Desktop 2560×2048px) | `32580d61fd304bfab1a93757e58714a1` (Mobile 780×1998px) | `496f3d21c7ce4be3b48bead21b8d8b94` (Desktop Extended) | `8c369e37460042e28f699085e8fadcb3` (Roles & Permissions) | `e6bc643d35f7453eabf03ee574ccb990` (Mobile v2)
 
-## Liên quan
-- Lỗi TODO Fix User/Role List Null: [Role Bug](../../skills/erp-dynamic-permission/role-dropdown-flow.md)
-- Phân luồng Cấu trúc lưới (Table UI Component): [Giao diện Grid](../../skills/erp-frontend-ui/SKILL.md)
+### Bố cục tổng thể
+- **Sidebar (~220px):** Logo "Admin Console Enterprise Suite" → Nav dọc với User Management active → PRO FEATURES banner → Avatar cuối
+- **Main:** H2 "User Management" + Filter bar (Search + Dropdown Role/Status) + Tab (Overview | Directory | Groups) → Bảng users (Avatar, Name, ID, Email, Role badge, Status chip, Last Login, Actions) → Right panel: Growth Forecast chart + Security Score
+
+### Danh sách Component
+| Component | Mục đích | Server/Client |
+|-----------|----------|---------------|
+| `UsersPage` | Trang chính, fetch danh sách users | Server |
+| `UsersTable` | Bảng hiển thị với sort/filter | Server |
+| `UserFormModal` | Form thêm/sửa user + chọn role | Client |
+| `RolesPermissionsPage` | Ma trận phân quyền Role × Permission | Server |
+
+## 🔀 Flow
+
+1. UI Page Grid → `GET /api/Users?page=&size=&search=`
+2. Thêm mới: Click Toolbar → `AppPopup` mở `UserForm` → `POST /api/Users` (với `selectedRoles: string[]`)
+3. Cập nhật: Edit mode → ngăn thay đổi Username → `PUT /api/Users/{id}` → Delete Identity UserRoles → Set roles mới
+4. Xóa: Soft delete (`IsDeleted = true`) → `DELETE /api/Users/{id}`
+5. Dữ liệu thay đổi → Table tự refresh
+
+## 📐 Scope ảnh hưởng
+
+- [x] Model / DB: Entity `ApplicationUser`, `UserRole` — Soft Delete, Index kép (Username + TenantId)
+- [x] API endpoint: GET/POST/PUT/DELETE `/api/Users`
+- [x] Permission: `Users.View`, `Users.Create`, `Users.Edit`, `Users.Delete`
+- [x] Frontend: `UsersPage`, `UsersTable`, `UserFormModal`
+- [ ] Background job / SignalR: N/A
+
+## ✅ Checklist
+
+### Backend
+- [x] Entity `ApplicationUser` với Soft Delete (`IsDeleted`)
+- [x] Index kép `(NormalizedUserName, TenantId)` chống duplicate
+- [x] `UsersController` với 4 endpoints
+- [x] Logic tách flow đổi password riêng (bypass empty string)
+
+### Frontend
+- [x] `UsersPage` + `UsersTable` (AppButton, AppPopup)
+- [x] `UserForm` với `Checkable Tags` chọn Role
+- [x] Guard Dialog xác nhận Abandon changes khi dirty
+- [x] Dropdown Role không push null / empty array
+
+## ⚠️ Rủi ro / Lưu ý
+
+- `SelectedRoles` là array riêng — Frontend phải bóc string trước khi gửi REST
+- Không được thay đổi Username khi Edit Mode đang bật
+- Fix liên quan: [Role Bug](../../skills/erp-dynamic-permission/role-dropdown-flow.md)
+
+## 📝 Ghi chú hoàn thành
+
+Module đã hoàn thành và ổn định (status: stable). Thiết kế UI đã được đồng bộ lên Notion ngày 2026-03-25 với 5 Stitch screens (Desktop + Mobile + Roles & Permissions).

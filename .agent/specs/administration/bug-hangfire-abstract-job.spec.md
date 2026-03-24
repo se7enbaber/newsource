@@ -1,58 +1,58 @@
+# [fix_bug] Hangfire Abstract/Interface Job Activation
+
+> **Notion:** *(chưa tạo — bug nhỏ, resolve nhanh)*
+> **Ngày tạo:** 2026-03-15
+> **Cập nhật lần cuối:** 2026-03-25
+> **Status:** done
+> **Module:** AdministrationService
+
 ---
-feature: "[BUG] Hangfire abstract/interface job activation"
-module: AdministrationService
-status: fixed
-updated: 2026-03-15
----
 
-# [BUG] Hangfire `Instances of abstract classes cannot be created`
+## 📋 Mô tả
 
-## Triệu chứng
+Hangfire worker throw `Instances of abstract classes cannot be created` khi cố khởi tạo job được enqueue bằng interface type (`IFooJob`) thay vì concrete class. Job retry liên tục và không bao giờ chạy thành công.
 
-Log trên `AdministrationService` (Hangfire worker):
+## 🎯 Mục tiêu & Actor
 
+- **Actor:** System (Hangfire worker)
+- **Mục tiêu:** Cho phép Hangfire resolve job qua DI container (hỗ trợ interface) thay vì `ActivatorUtilities.CreateInstance` thuần túy
+
+## 🔀 Flow (Root Cause)
+
+```mermaid
+sequenceDiagram
+    participant HF as Hangfire Worker
+    participant DI as DI Container
+    participant AU as ActivatorUtilities
+
+    HF->>HF: Dequeue job (type = IFooJob / abstract)
+    HF->>AU: CreateInstance(IFooJob) ← fallback
+    AU-->>HF: InvalidOperationException: abstract class
+    HF->>HF: Retry (indefinitely)
 ```
-System.InvalidOperationException: Instances of abstract classes cannot be created.
-at Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance(...)
-at Hangfire.AspNetCore.AspNetCoreJobActivatorScope.Resolve(...)
-```
 
-Job bị retry nhiều lần và không chạy được.
+**Nguyên nhân:** `RecurringJob.AddOrUpdate<IFooJob>(...)` lưu interface type vào storage. Khi execute, `AspNetCoreJobActivatorScope` fallback `ActivatorUtilities` → throw vì không tạo được interface instance.
 
-## Nguyên nhân gốc (Root cause)
+## 📐 Scope ảnh hưởng
 
-Hangfire đang cố khởi tạo **job type là `interface` hoặc `abstract`** từ dữ liệu job đã lưu trong storage (Redis/Postgres).
+- [x] Model / DB: N/A
+- [x] API endpoint: N/A
+- [x] Permission: N/A
+- [x] Frontend: N/A
+- [x] Background job: `DiFirstJobActivator` trong `Program.cs`, DI mapping `ITenantMigrationJob → TenantMigrationJob`
 
-Điều này thường xảy ra khi trước đó có enqueue/schedule job theo kiểu:
+## ✅ Checklist
 
-- `_backgroundJobClient.Enqueue<IFooJob>(job => job.Run(...))`
-- `RecurringJob.AddOrUpdate<IFooJob>(...)`
+### Backend
+- [x] Implement `DiFirstJobActivator` — resolve từ DI trước, fallback `ActivatorUtilities` chỉ với concrete type
+- [x] Đăng ký `services.AddScoped<ITenantMigrationJob, TenantMigrationJob>()` trong `DependencyInjection.cs`
+- [x] Verify Hangfire dashboard không còn fail với lỗi abstract class
 
-Khi job được thực thi, `AspNetCoreJobActivatorScope` fallback sang `ActivatorUtilities.CreateInstance(...)` và sẽ throw nếu type là abstract/interface.
+## ⚠️ Rủi ro / Lưu ý
 
-## Fix đã áp dụng
+- Nếu storage còn job cũ enqueue bằng interface type khác → cần đăng ký DI mapping hoặc xóa/requeue qua Hangfire dashboard
+- Verify command: `dotnet build .\AdministrationService\AdministrationService.csproj -c Release`
 
-1) Đổi Hangfire activator sang **DI-first**: ưu tiên resolve job từ DI (hỗ trợ interface job nếu đã đăng ký), chỉ fallback `ActivatorUtilities.CreateInstance` cho type concrete.
+## 📝 Ghi chú hoàn thành
 
-- `AdministrationService/Program.cs:114` (`DiFirstJobActivator`)
-
-2) Đăng ký DI mapping cho job interface có khả năng đã được enqueue trước đây:
-
-- `AdministrationService/Extensions/DependencyInjection.cs:18`
-  - `services.AddScoped<Services.ITenantMigrationJob, Services.TenantMigrationJob>();`
-
-## Cách verify
-
-1) Build:
-
-`dotnet build .\AdministrationService\AdministrationService.csproj -c Release`
-
-2) Chạy service và quan sát Hangfire dashboard `/hangfire`:
-
-- Job không còn fail với lỗi “Instances of abstract classes…”
-
-## Lưu ý khi vẫn còn lỗi sau deploy
-
-- Nếu trong storage còn job cũ được enqueue bằng interface/abstract type khác, cần:
-  - đăng ký DI cho type đó, **hoặc**
-  - xóa/requeue job sai type trong Hangfire dashboard.
+Fixed 2026-03-15. Files sửa: `Program.cs:114` (DiFirstJobActivator), `Extensions/DependencyInjection.cs:18`.
