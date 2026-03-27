@@ -282,6 +282,7 @@ Thêm dòng vào bảng tương ứng trong `.agent/specs/INDEX.md`:
 ```
 
 > **🔴 HARD-GATE: KHÔNG viết bất kỳ dòng code nào trước khi user gõ "confirm" / "ok" / tương đương.**
+> **TIẾP THEO:** Sau khi được confirm, hãy dùng skill `erp-tech-designer` để lập kế hoạch thiết kế kỹ thuật chi tiết (.tech.md) trước khi bắt đầu code.
 
 ---
 

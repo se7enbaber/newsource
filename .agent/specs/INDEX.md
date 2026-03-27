@@ -10,6 +10,7 @@
 |----------|------|--------|------|--------|
 | **Agent Workflow & Analysis Process** | [pm-assistant.md](../workflows/pm-assistant.md) | [Link](https://www.notion.so/Agent-Workflow-Analysis-Process-32cf1e6a215c8131bf23d0bc01eddad3) | Workflow | active |
 | **Analyst Skill (erp-analyst)** | [analyst/SKILL.md](../skills/analyst/SKILL.md) | [Link](https://www.notion.so/Agent-Workflow-Analysis-Process-32cf1e6a215c8131bf23d0bc01eddad3) | Skill | active |
+| **Tech Designer (erp-tech-designer)** | [tech-designer/SKILL.md](../skills/tech-designer/SKILL.md) | [Link](https://www.notion.so/Agent-Workflow-Analysis-Process-32cf1e6a215c8131bf23d0bc01eddad3) | Skill | active |
 | **Thiết kế & UX** | [DESIGN.md](../DESIGN.md) | - | Design | stable |
 
 ## 🏗️ System Architecture
@@ -44,6 +45,7 @@
 | AI Governance & Monitoring | [ai/governance-monitoring.spec.md](./ai/governance-monitoring.spec.md) | [Link](https://www.notion.so/AI-Governance-Monitoring-Spec-32bf1e6a215c81dca2c3ebefb095b0f4) | AI-Service | draft |
 | Kiến trúc hạ tầng AI | [ai/infrastructure.spec.md](./ai/infrastructure.spec.md) | [Link](https://www.notion.so/AI-Infrastructure-Spec-32bf1e6a215c81c5bd2acd410a9f226f) | AiService | active |
 | [BUG] AI Proxy Exception | [ai/bug-proxy-exception.md](./ai/bug-proxy-exception.md) | [Link](https://www.notion.so/BUG-Analysis-Proxy-Exception-AI-Chat-32bf1e6a215c81789496fdbfb7ff2faa) | AiService | fixed |
+| [BUG] AI Response Invalid Argument | [ai/bug-invalid-argument.spec.md](./ai/bugfix-invalid-argument.spec.md) | [Link](https://www.notion.so/BUG-AI-Assistant-Response-400-Invalid-Argument-Fixing-330f1e6a215c81f1ad49c9ad10bd075e) | AiService | in-progress |
 | Lộ trình phát triển | [roadmap.spec.md](./roadmap.spec.md) | - | Toàn hệ thống | planned |
 
 ## 📚 Tri thức nghiệp vụ (KIs)
@@ -59,7 +61,7 @@
 
 ---
 
-## 📌 Ghi chú Notion Workspace
+## 📌 Ghi chú> **Notion:** [Link](https://www.notion.so/BUG-AI-Assistant-Response-400-Invalid-Argument-Fixing-330f1e6a215c81f1ad49c9ad10bd075e)
 
 | Page | ID | URL |
 |------|----|-----|
